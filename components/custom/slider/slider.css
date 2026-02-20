@@ -1,0 +1,74 @@
+/* Headless Slider: chỉ layout + overflow + dots. Không style nội dung slide. */
+
+.embla {
+  position: relative;
+  width: 100%;
+  height: 90vh;
+  aspect-ratio: unset;
+}
+
+.embla__viewport {
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.embla__container {
+  display: flex;
+  touch-action: pan-y pinch-zoom;
+  height: 100%;
+}
+
+.embla__slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dots overlay (chỉ vị trí + dots UI) */
+.embla__dots-overlay {
+  position: absolute;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.embla__dots-overlay .embla__dots {
+  pointer-events: auto;
+}
+
+.embla__dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.embla__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background-color: #fff;
+  opacity: 0.5;
+  cursor: pointer;
+  transition: width 0.2s ease, height 0.2s ease, opacity 0.2s ease;
+}
+
+.embla__dot:hover {
+  opacity: 0.8;
+}
+
+.embla__dot--selected {
+  width: 8px;
+  height: 8px;
+  opacity: 1;
+}
