@@ -1,2 +1,3 @@
-export { EventFundingSlide } from "./EventFundingSlide"
-export { PromotionSlide } from "./PromotionSlide"
+export { EventFundingSlide } from "./EventFunding"
+export { PromotionSlide } from "./Promotion"
+export { DiscoverySlide } from "./Discovery"

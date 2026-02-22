@@ -46,15 +46,15 @@ export default function Slider({
     emblaApi.on("reInit", onSelect).on("select", onSelect)
   }, [emblaApi, onSelect])
 
-  // useEffect(() => {
-  //   if (!autoplay || !emblaApi || slides.length <= 1) return
-  //   autoplayRef.current = setInterval(() => {
-  //     emblaApi.scrollNext()
-  //   }, autoplayIntervalMs)
-  //   return () => {
-  //     if (autoplayRef.current) clearInterval(autoplayRef.current)
-  //   }
-  // }, [autoplay, autoplayIntervalMs, emblaApi, slides.length])
+  useEffect(() => {
+    if (!autoplay || !emblaApi || slides.length <= 1) return
+    autoplayRef.current = setInterval(() => {
+      emblaApi.scrollNext()
+    }, autoplayIntervalMs)
+    return () => {
+      if (autoplayRef.current) clearInterval(autoplayRef.current)
+    }
+  }, [autoplay, autoplayIntervalMs, emblaApi, slides.length])
 
   if (!slides.length) return null
 

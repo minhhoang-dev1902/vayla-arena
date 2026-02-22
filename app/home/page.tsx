@@ -2,6 +2,8 @@
 
 import Slider from "@/components/custom/slider/Slider"
 import { EventFundingSlide, PromotionSlide } from "@/components/custom/slider/slides"
+import { DiscoverySlide } from "@/components/custom/slider/slides/Discovery"
+import { SectionCard } from "./_components/SectionCard"
 
 export default function Home() {
   return (
@@ -15,27 +17,27 @@ export default function Home() {
           {
             id: "promotion",
             content: (
-              <PromotionSlide
-                headline="V-Onchain Chart"
-                description="Fans decide the ranking"
-                ctaText="Participate in Vote & Earn Rewards"
-              />
+              <PromotionSlide />
             ),
           },
           {
-            id: "event-funding-2",
-            content: (
-              <EventFundingSlide
-                subtitle="Community Pool"
-                items={["Status: Live", "Goal: $5,000.", "Progress: 100%", "Ended"]}
-                buttonText="View results"
-              />
-            ),
+            id: "discovery",
+            content: <DiscoverySlide />,
           },
         ]}
         autoplay
         autoplayIntervalMs={5000}
       />
+      <div className="flex flex-col gap-4 bg-red-500 justify-center items-center px-8 py-5">
+        <SectionCard
+          label="Funding"
+          imageSrc="/images/card-funding.png"
+          imageAlt="funding"
+          title="Participate in Web3 funding projects"
+          buttonText="Explore Funding"
+          action={() => { }}
+        />
+      </div>
     </main>
   )
 }
