@@ -19,7 +19,7 @@ export function SectionCard({
   action,
 }: SectionCardProps) {
   return (
-    <article className="px-1 flex w-full flex-col overflow-hidden rounded-xl border-[#4285F4] bg-white shadow-md border-t-2 border-l-2 border-r-6 border-b-6">
+    <article className="px-1 flex w-full flex-col overflow-hidden rounded-2xl border-[#4285F4] bg-white shadow-md border-t-6 border-l-6 border-l-2 border-r-12 border-b-12">
       <p className=" px-2 pt-4 text-base font-semibold text-black text-xl">[{label}]</p>
       <div className="relative mt-4 aspect-[5/2] w-full overflow-hidden px-4">
         <Image
