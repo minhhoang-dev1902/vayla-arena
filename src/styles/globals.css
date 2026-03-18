@@ -6,7 +6,7 @@
 :root {
 	--font-size: 16px;
 	--background: #0a2540;
-	--foreground: #ffffff;
+	--foreground: #f8fafc;
 	--card: #ffffff;
 	--card-foreground: #0a2540;
 	--popover: #ffffff;
@@ -35,7 +35,7 @@
 	--chart-5: #0a2540;
 	--radius: 0.75rem;
 	--sidebar: #0a2540;
-	--sidebar-foreground: #ffffff;
+	--sidebar-foreground: #d8e6f2;
 	--sidebar-primary: #1db68b;
 	--sidebar-primary-foreground: #ffffff;
 	--sidebar-accent: #1a3a52;
@@ -46,7 +46,7 @@
 
 .dark {
 	--background: #0a2540;
-	--foreground: #ffffff;
+	--foreground: #d8e6f2;
 	--card: #1a3a52;
 	--card-foreground: #ffffff;
 	--popover: #1a3a52;
@@ -73,7 +73,7 @@
 	--chart-4: #9ab4c9;
 	--chart-5: #0a2540;
 	--sidebar: #0a2540;
-	--sidebar-foreground: #ffffff;
+	--sidebar-foreground: #d8e6f2;
 	--sidebar-primary: #1db68b;
 	--sidebar-primary-foreground: #ffffff;
 	--sidebar-accent: #1a3a52;
