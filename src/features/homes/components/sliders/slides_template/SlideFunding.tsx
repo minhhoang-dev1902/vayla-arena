@@ -55,7 +55,7 @@ export default function SlideFunding({
 				<div className="absolute inset-0 bg-linear-to-b from-muted/80 to-background" />
 			)}
 
-			<div className="absolute bottom-20 left-0 right-0  z-10 flex flex-1 flex-col items-center ">
+			<div className="absolute inset-0 justify-center items-center z-10 flex flex-col px-4">
 				<div className="flex w-full max-w-[320px] flex-col items-center gap-8">
 					<h2 className="text-center text-3xl font-bold leading-tight text-foreground drop-shadow-sm">
 						{title}

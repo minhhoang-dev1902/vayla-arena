@@ -2,10 +2,18 @@
 
 import { useRouter } from "next/navigation";
 import waterBombImage from "@/assets/images/water-bomb.png";
+import SlideDiscovery from "@/features/homes/components/sliders/slides_template/SlideDiscovery";
 import SlideFunding from "@/features/homes/components/sliders/slides_template/SlideFunding";
+import SlideVOnchainChart from "@/features/homes/components/sliders/slides_template/SlideVOnchainChart";
 import CustomSlider from "@/share/components/custom/slider/CustomSlider";
 
 const END_TIME = Date.now() + 12 * 24 * 60 * 60 * 1000;
+
+const DISCOVERY_ENTRIES = [
+	{ rank: 1, highlighted: false, artistName: "LUNA K", trackName: "Midnight Echo" },
+	{ rank: 2, highlighted: false, artistName: "NOVA", trackName: "City Lights" },
+	{ rank: 3, highlighted: true, artistName: "JAYDEN", trackName: "Neon Heart" },
+];
 
 export default function Slider() {
 	const router = useRouter();
@@ -24,26 +32,30 @@ export default function Slider() {
 			),
 		},
 		{
-			id: "reward festival",
+			id: "v-onchain-chart",
 			content: (
-				<SlideFunding
-					time={END_TIME}
-					title="Waterbomb Festival Funding"
+				<SlideVOnchainChart
+					title="V-ONCHAIN CHART"
+					liveLabel="Live voting now"
+					subtitle="Fans decide the ranking"
 					backgroundImageSrc={waterBombImage}
-					buttonTitle="Participate in Web3.0 Funding"
-					buttonAction={() => router.push("/funding")}
+					buttonAction={() => router.push("/vote")}
+					subtitle2="Powered by Fandom Token Voting"
+					buttonTitle="Participate in Vote & Earn Rewards"
 				/>
 			),
 		},
 		{
-			id: "waterbomb festival",
+			id: "discovery",
 			content: (
-				<SlideFunding
-					time={END_TIME}
-					title="Waterbomb Festival Funding"
+				<SlideDiscovery
+					title="VAYLA Discovery"
+					hotLabel="Hot Discovery"
+					entries={DISCOVERY_ENTRIES}
+					buttonTitle="Explore Discovery"
 					backgroundImageSrc={waterBombImage}
-					buttonTitle="Participate in Web3.0 Funding"
-					buttonAction={() => router.push("/funding")}
+					subtitle="Where fans discover new artists"
+					buttonAction={() => router.push("/discovery")}
 				/>
 			),
 		},
