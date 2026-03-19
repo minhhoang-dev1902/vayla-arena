@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	BadgeCheck,
 	CheckCircle2,
@@ -10,8 +12,11 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { getDiscoveryHotApi } from "@/apis/discovery.api";
 import iconCheck from "@/assets/icons/icon-check-circle.svg";
 import discoveryHeroImage from "@/assets/images/card_discovery.png";
+import { useAppQuery } from "@/hooks/use-app-query";
+import { createQueryKey } from "@/lib/query-key";
 import { Button } from "@/share/components/ui/button";
 import { DiscoveringNowCarousel } from "./_components/discovering-now";
 
@@ -21,7 +26,7 @@ const HOT_THIS_MONTH = [
 	{ rank: 3, title: "Crystal Dreams", artist: "MIDNIGHT SYNTH" },
 ];
 
-const DISCOVERING_NOW = [
+const _DISCOVERING_NOW = [
 	{ rank: 1, votes: 542, artist: "AURORA", title: "Starlight" },
 	{ rank: 2, votes: 418, artist: "COAST", title: "Ocean Drive" },
 	{ rank: 3, votes: 391, artist: "PULSE", title: "Electric Dreams" },
@@ -44,6 +49,13 @@ const DISCOVERING_NOW = [
 	{ rank: 20, votes: 690, artist: "VOLT VELVET", title: "Afterglow Run" },
 ];
 
+type DiscoveringNowItem = {
+	rank: number;
+	votes: number;
+	artist: string;
+	title: string;
+};
+
 const HERO_CHECKS = [
 	{ label: "Max 1 min" },
 	{ label: "Original Video" },
@@ -52,6 +64,24 @@ const HERO_CHECKS = [
 ] as const;
 
 export default function DiscoveryPage() {
+	const { data: discoveringNowItems } = useAppQuery<DiscoveringNowItem[]>({
+		queryKey: createQueryKey("/discovery/hot", { limit: 20, offset: 0 }),
+		queryFn: async () => {
+			const response = await getDiscoveryHotApi({ limit: 20, offset: 0 });
+			const tracks = Array.isArray(response) ? response : (response?.tracks ?? []);
+			// if (tracks.length === 0) {
+			// 	return DISCOVERING_NOW;
+			// }
+
+			return tracks.map((track, _index) => ({
+				rank: track.rank,
+				votes: Number(track.voteCount ?? 0),
+				artist: track.artistName,
+				title: track.trackTitle,
+			}));
+		},
+	});
+
 	return (
 		<div className="flex flex-col pb-24">
 			{/* Hero (matches mock flow) */}
@@ -143,7 +173,7 @@ export default function DiscoveryPage() {
 
 			<div className="flex flex-col gap-6 px-4 mt-4">
 				{/* Discovering Now */}
-				<DiscoveringNowCarousel items={DISCOVERING_NOW} />
+				<DiscoveringNowCarousel items={discoveringNowItems || []} />
 
 				<div className="flex flex-col gap-6 mt-6">
 					{/* Why VAYLA Discovery? */}
