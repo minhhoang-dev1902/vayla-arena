@@ -44,6 +44,12 @@ export default function ConnectWalletPage() {
 		}
 	}, [ready, authenticated, router]);
 
+	useEffect(() => {
+		if (typeof window !== "undefined" && localStorage.getItem("access_token")) {
+			router.replace("/");
+		}
+	}, [router]);
+
 	const handleConnect = () => {
 		login();
 	};
