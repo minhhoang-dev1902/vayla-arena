@@ -1,13 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { usePrivy } from "@privy-io/react-auth";
 import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { loginApi } from "@/apis/auth.api";
+import { useLogin } from "@/features/auth/hooks/use-login";
 import { Button } from "@/share/components/ui/button";
 
 const loginSchema = z.object({
@@ -19,12 +20,20 @@ type LoginValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
 	const router = useRouter();
+	const { ready, authenticated } = usePrivy();
 	const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 	const [submitError, setSubmitError] = useState("");
+
+	const { login, isPending } = useLogin({
+		onError: () => {
+			setSubmitError("Incorrect email or password. Please try again.");
+		},
+	});
+
 	const {
 		register,
 		handleSubmit,
-		formState: { errors, isSubmitting },
+		formState: { errors },
 	} = useForm<LoginValues>({
 		resolver: zodResolver(loginSchema),
 		defaultValues: {
@@ -34,22 +43,14 @@ export default function LoginPage() {
 	});
 
 	useEffect(() => {
-		const token = localStorage.getItem("access_token");
-		if (token) {
+		if (ready && authenticated) {
 			router.replace("/");
 		}
-	}, [router]);
+	}, [ready, authenticated, router]);
 
 	const onSubmit = async (values: LoginValues) => {
 		setSubmitError("");
-		try {
-			const response = await loginApi(values);
-			localStorage.setItem("access_token", response.accessToken);
-			localStorage.setItem("refresh_token", response.refreshToken);
-			router.replace("/");
-		} catch {
-			setSubmitError("Incorrect email or password. Please try again.");
-		}
+		await login(values);
 	};
 
 	return (
@@ -65,7 +66,7 @@ export default function LoginPage() {
 				</div>
 
 				<form onSubmit={handleSubmit(onSubmit)} className="mt-8 flex flex-col gap-5">
-					<fieldset disabled={isSubmitting} className="flex flex-col gap-6">
+					<fieldset disabled={isPending} className="flex flex-col gap-6">
 						<div className="space-y-2">
 							<label htmlFor="email" className="text-xs font-semibold uppercase text-[#9fb2c7]">
 								Email Address
@@ -116,10 +117,10 @@ export default function LoginPage() {
 
 					<Button
 						type="submit"
-						disabled={isSubmitting}
+						disabled={isPending}
 						className="mt-5 py-6 rounded-lg bg-[linear-gradient(90deg,#2de8dc_0%,#119e9c_100%)] text-xl font-semibold text-[#eef5f7] hover:opacity-95"
 					>
-						{isSubmitting ? (
+						{isPending ? (
 							<>
 								<Loader2 className="size-5 animate-spin" />
 								Logging in...

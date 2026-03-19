@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PrivyAuthProvider } from "@/share/components/providers/privy-provider";
 import { QueryProvider } from "@/share/components/providers/query-provider";
 import "@/styles/globals.css";
 
@@ -28,7 +29,9 @@ export default function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[black]`}
 			>
-				<QueryProvider>{children}</QueryProvider>
+				<PrivyAuthProvider>
+					<QueryProvider>{children}</QueryProvider>
+				</PrivyAuthProvider>
 			</body>
 		</html>
 	);

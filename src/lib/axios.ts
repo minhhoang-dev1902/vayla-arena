@@ -10,7 +10,7 @@ declare module "axios" {
 
 function getToken(): string | null {
 	if (typeof window === "undefined") return null;
-	return localStorage.getItem("access_token");
+	return localStorage.getItem("privy:token") ?? localStorage.getItem("access_token");
 }
 
 const axiosInstance = axios.create({
@@ -45,7 +45,7 @@ axiosInstance.interceptors.response.use(
 
 		if (status === 401 && typeof window !== "undefined") {
 			localStorage.removeItem("access_token");
-			window.location.href = "/login";
+			localStorage.removeItem("privy:token");
 		}
 
 		const apiError: ApiError = {

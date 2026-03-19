@@ -1,6 +1,7 @@
 "use client";
 
-import { LogIn } from "lucide-react";
+import { usePrivy } from "@privy-io/react-auth";
+import { LogIn, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
@@ -8,13 +9,13 @@ import { Button } from "@/share/components/ui/button";
 
 export default function WelcomePage() {
 	const router = useRouter();
+	const { ready, authenticated } = usePrivy();
 
 	useEffect(() => {
-		const token = localStorage.getItem("access_token");
-		if (token) {
+		if (ready && authenticated) {
 			router.replace("/");
 		}
-	}, [router]);
+	}, [ready, authenticated, router]);
 
 	return (
 		<div className="relative flex min-h-screen flex-col overflow-hidden bg-[#020816] px-6 pb-8 pt-12 text-white">
@@ -45,9 +46,9 @@ export default function WelcomePage() {
 						asChild
 						className="h-11 rounded-xl bg-[linear-gradient(90deg,#2de8dc_0%,#119e9c_100%)] text-base font-semibold text-[#022531] hover:opacity-95"
 					>
-						<Link href="/login" className="flex items-center justify-center gap-2">
-							Log In
-							<LogIn className="size-4" />
+						<Link href="/connect-wallet" className="flex items-center justify-center gap-2">
+							Connect Wallet
+							<Wallet className="size-4" />
 						</Link>
 					</Button>
 
@@ -56,7 +57,10 @@ export default function WelcomePage() {
 						variant="outline"
 						className="h-11 rounded-xl border border-[#1fe1d4]/55 bg-transparent text-base font-semibold text-[#1fe1d4] hover:bg-[#1fe1d4]/10"
 					>
-						<Link href="/sign-up">Sign Up</Link>
+						<Link href="/login" className="flex items-center justify-center gap-2">
+							Log In with Email
+							<LogIn className="size-4" />
+						</Link>
 					</Button>
 				</div>
 

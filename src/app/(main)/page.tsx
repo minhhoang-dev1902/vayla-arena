@@ -1,25 +1,32 @@
 "use client";
 
+import { usePrivy } from "@privy-io/react-auth";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import CardLists from "@/features/homes/components/card-list/CardLists";
 import InfoCardsSection from "@/features/homes/components/info-cards/InfoCardsSection";
 import Slider from "@/features/homes/components/sliders/Slider";
 
 export default function HomePage() {
 	const router = useRouter();
-	const [hasToken] = useState(() => {
-		if (typeof window === "undefined") return false;
-		return Boolean(localStorage.getItem("access_token"));
-	});
+	const { ready, authenticated } = usePrivy();
 
 	useEffect(() => {
-		if (!hasToken) {
+		if (ready && !authenticated) {
 			router.replace("/welcome");
 		}
-	}, [hasToken, router]);
+	}, [ready, authenticated, router]);
 
-	if (!hasToken) {
+	if (!ready) {
+		return (
+			<div className="flex min-h-screen items-center justify-center bg-[#020c18]">
+				<Loader2 className="size-8 animate-spin text-[#1ce8d7]" />
+			</div>
+		);
+	}
+
+	if (!authenticated) {
 		return <div className="min-h-screen bg-[#020c18]" />;
 	}
 

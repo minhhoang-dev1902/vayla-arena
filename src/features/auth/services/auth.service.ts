@@ -3,6 +3,31 @@ import { AUTH_ENDPOINTS } from "../constants/auth.endpoints";
 
 export type AuthRole = "fan" | "artist";
 
+// ─── Login ───────────────────────────────────────────────────────────
+
+export interface LoginRequestPayload {
+	email: string;
+	password: string;
+}
+
+export interface LoginResponse {
+	accessToken: string;
+	refreshToken: string;
+	user: {
+		id: string;
+		name: string;
+		email: string;
+	};
+}
+
+export const loginService = (payload: LoginRequestPayload): Promise<LoginResponse> =>
+	apiService.post({
+		url: AUTH_ENDPOINTS.LOGIN,
+		payload: payload as Record<string, unknown>,
+	});
+
+// ─── Register ────────────────────────────────────────────────────────
+
 export interface RegisterRequestPayload {
 	name: string;
 	email: string;
