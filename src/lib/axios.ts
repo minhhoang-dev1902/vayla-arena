@@ -1,0 +1,61 @@
+import axios, { type AxiosError, type AxiosResponse } from "axios";
+import type { ApiError, ApiResponse } from "@/types/api";
+
+declare module "axios" {
+	interface InternalAxiosRequestConfig {
+		toRequest?: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig;
+		toResponse?: (data: unknown) => unknown;
+	}
+}
+
+function getToken(): string | null {
+	if (typeof window === "undefined") return null;
+	return localStorage.getItem("access_token");
+}
+
+const axiosInstance = axios.create({
+	baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api",
+	timeout: 30_000,
+	headers: { "Content-Type": "application/json" },
+});
+
+axiosInstance.interceptors.request.use(config => {
+	const token = getToken();
+	if (token) {
+		config.headers.Authorization = `Bearer ${token}`;
+	}
+
+	if (config.toRequest) {
+		return config.toRequest(config);
+	}
+
+	return config;
+});
+
+axiosInstance.interceptors.response.use(
+	(response: AxiosResponse<ApiResponse<unknown>>) => {
+		const transformed = response.config.toResponse
+			? response.config.toResponse(response.data?.data ?? response.data)
+			: (response.data?.data ?? response.data);
+
+		return { ...response, data: transformed };
+	},
+	(error: AxiosError<ApiError>) => {
+		const status = error.response?.status;
+
+		if (status === 401 && typeof window !== "undefined") {
+			localStorage.removeItem("access_token");
+			window.location.href = "/login";
+		}
+
+		const apiError: ApiError = {
+			status: status ?? 0,
+			message: error.response?.data?.message ?? error.message ?? "An unexpected error occurred",
+			errors: error.response?.data?.errors,
+		};
+
+		return Promise.reject(apiError);
+	},
+);
+
+export { axiosInstance };
