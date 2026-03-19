@@ -27,18 +27,18 @@ const DISCOVERING_NOW = [
 	{ rank: 3, votes: 391, artist: "PULSE", title: "Electric Dreams" },
 	{ rank: 4, votes: 980, artist: "IGNIS NOVA", title: "Solar Flare" },
 	{ rank: 5, votes: 750, artist: "CYBER NEON", title: "Midnight City" },
-	{ rank: 6, votes: 420, artist: "ETHERIAL CLOUDS", title: "Velvet Sky" },
+	{ rank: 6, votes: 420, title: "Velvet Sky", artist: "ETHERIAL CLOUDS" },
 	{ rank: 7, votes: 610, artist: "NOVA LANE", title: "Sidewalk Satellites" },
 	{ rank: 8, votes: 365, artist: "MOONBYTE", title: "Lunar Loop" },
 	{ rank: 9, votes: 520, artist: "AQUA VIBE", title: "Tide Runner" },
 	{ rank: 10, votes: 290, artist: "EMBERLINE", title: "Heatwave Letters" },
-	{ rank: 11, votes: 735, artist: "PRISM RIVER", title: "Colorwave" },
+	{ rank: 11, votes: 735, title: "Colorwave", artist: "PRISM RIVER" },
 	{ rank: 12, votes: 455, artist: "WAVEFORM", title: "Signal Bloom" },
-	{ rank: 13, votes: 315, artist: "DUSK ATLAS", title: "Night Map" },
-	{ rank: 14, votes: 620, artist: "GLITCH GARDEN", title: "Bloom Error" },
-	{ rank: 15, votes: 840, artist: "SATURN SODA", title: "Cosmic Pop" },
-	{ rank: 16, votes: 250, artist: "SKYWARD STATIC", title: "Radio Sunrise" },
-	{ rank: 17, votes: 410, artist: "VIOLET CIRCUIT", title: "Plasma Kisses" },
+	{ rank: 13, votes: 315, title: "Night Map", artist: "DUSK ATLAS" },
+	{ rank: 14, votes: 620, title: "Bloom Error", artist: "GLITCH GARDEN" },
+	{ rank: 15, votes: 840, title: "Cosmic Pop", artist: "SATURN SODA" },
+	{ rank: 16, votes: 250, title: "Radio Sunrise", artist: "SKYWARD STATIC" },
+	{ rank: 17, votes: 410, title: "Plasma Kisses", artist: "VIOLET CIRCUIT" },
 	{ rank: 18, votes: 560, artist: "ECHO LAGOON", title: "Shoreline Echo" },
 	{ rank: 19, votes: 330, artist: "ORBITAL ROSES", title: "Garden of Gravity" },
 	{ rank: 20, votes: 690, artist: "VOLT VELVET", title: "Afterglow Run" },
@@ -201,19 +201,19 @@ export default function DiscoveryPage() {
 								<ol className="space-y-2 text-sm text-card-foreground">
 									<li className="flex items-start gap-3">
 										<span className="mt-0.5 flex size-5 items-center justify-center rounded-full  text-card">
-											<Image src={iconCheck} alt="Check" width={15} height={15} />
+											<Image width={15} alt="Check" height={15} src={iconCheck} />
 										</span>
 										<span>1. USDT rewards &amp; official NFTs</span>
 									</li>
 									<li className="flex items-start gap-3">
 										<span className="mt-0.5 flex size-5 items-center justify-center rounded-full  text-card">
-											<Image src={iconCheck} alt="Check" width={15} height={15} />
+											<Image width={15} alt="Check" height={15} src={iconCheck} />
 										</span>
 										<span>2. Platform support and exposure</span>
 									</li>
 									<li className="flex items-start gap-3">
 										<span className="mt-0.5 flex size-5 items-center justify-center rounded-full  text-card">
-											<Image src={iconCheck} alt="Check" width={15} height={15} />
+											<Image width={15} alt="Check" height={15} src={iconCheck} />
 										</span>
 										<span>3. Qualification for semi-annual finals</span>
 									</li>
@@ -228,19 +228,19 @@ export default function DiscoveryPage() {
 								<ol className="space-y-2 text-sm text-card-foreground">
 									<li className="flex items-start gap-3">
 										<span className="mt-0.5 flex size-5 items-center justify-center rounded-full text-card">
-											<Image src={iconCheck} alt="Check" width={15} height={15} />
+											<Image width={15} alt="Check" height={15} src={iconCheck} />
 										</span>
 										<span>1. Free voting participation</span>
 									</li>
 									<li className="flex items-start gap-3">
 										<span className="mt-0.5 flex size-5 items-center justify-center rounded-full text-card">
-											<Image src={iconCheck} alt="Check" width={15} height={15} />
+											<Image width={15} alt="Check" height={15} src={iconCheck} />
 										</span>
 										<span>2. Discovery NFTs</span>
 									</li>
 									<li className="flex items-start gap-3">
 										<span className="mt-0.5 flex size-5 items-center justify-center rounded-full text-card">
-											<Image src={iconCheck} alt="Check" width={15} height={15} />
+											<Image width={15} alt="Check" height={15} src={iconCheck} />
 										</span>
 										<span>3. On-chain proof of participation</span>
 									</li>

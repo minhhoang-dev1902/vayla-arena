@@ -3,8 +3,8 @@ import type { ApiError, ApiResponse } from "@/types/api";
 
 declare module "axios" {
 	interface InternalAxiosRequestConfig {
-		toRequest?: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig;
 		toResponse?: (data: unknown) => unknown;
+		toRequest?: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig;
 	}
 }
 
@@ -14,9 +14,9 @@ function getToken(): string | null {
 }
 
 const axiosInstance = axios.create({
-	baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api",
 	timeout: 30_000,
 	headers: { "Content-Type": "application/json" },
+	baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api",
 });
 
 axiosInstance.interceptors.request.use(config => {
@@ -50,8 +50,8 @@ axiosInstance.interceptors.response.use(
 
 		const apiError: ApiError = {
 			status: status ?? 0,
-			message: error.response?.data?.message ?? error.message ?? "An unexpected error occurred",
 			errors: error.response?.data?.errors,
+			message: error.response?.data?.message ?? error.message ?? "An unexpected error occurred",
 		};
 
 		return Promise.reject(apiError);
