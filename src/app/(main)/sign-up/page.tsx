@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { registerApi } from "@/apis/auth.api";
 import vaylaLogo from "@/assets/images/vayla-logo.png";
+import { useRegister } from "@/features/auth/hooks/use-register";
 import { Button } from "@/share/components/ui/button";
 
 const signUpSchema = z
@@ -24,12 +24,6 @@ const signUpSchema = z
 
 type SignUpValues = z.infer<typeof signUpSchema>;
 
-function deriveNameFromEmail(email: string) {
-	const localPart = email.split("@")[0] ?? "";
-	const normalized = localPart.replace(/[._-]+/g, " ").trim();
-	return normalized.length > 0 ? normalized : "VAYLA User";
-}
-
 export default function SignUpPage() {
 	const router = useRouter();
 	const [submitMessage, setSubmitMessage] = useState<string>("");
@@ -38,7 +32,7 @@ export default function SignUpPage() {
 	const {
 		register,
 		handleSubmit,
-		formState: { errors, isSubmitting },
+		formState: { errors, isSubmitting: isFormSubmitting },
 	} = useForm<SignUpValues>({
 		resolver: zodResolver(signUpSchema),
 		defaultValues: {
@@ -47,14 +41,15 @@ export default function SignUpPage() {
 			confirmPassword: "",
 		},
 	});
+	const { isPending: isRegistering, register: registerAccount } = useRegister();
+	const isSubmitting = isFormSubmitting || isRegistering;
 
 	const onSubmit = async (values: SignUpValues) => {
 		setSubmitMessage("");
 		try {
-			await registerApi({
+			await registerAccount({
 				email: values.email,
 				password: values.password,
-				name: deriveNameFromEmail(values.email),
 			});
 
 			setSubmitMessage("Sign up successful. Please log in to continue.");
@@ -73,7 +68,7 @@ export default function SignUpPage() {
 	};
 
 	return (
-		<div className="relative flex max-h-screen flex-col overflow-hidden bg-[#020816] px-6 pb-8  text-white">
+		<div className="relative flex max-h-screen min-h-screen flex-col overflow-hidden bg-[#020816] px-6 pb-8  text-white">
 			<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_16%,rgba(33,225,216,0.24),transparent_34%),radial-gradient(circle_at_50%_45%,rgba(9,50,76,0.42),transparent_63%),linear-gradient(180deg,#041426_0%,#010612_100%)]" />
 
 			<div className="relative z-10 mx-auto flex h-full w-full  flex-1 flex-col">
