@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LAYOUT_MAX_WIDTH_PX } from "@/share/constants/layout";
+import { BOTTOM_NAV_HEIGHT_PX, LAYOUT_MAX_WIDTH_PX } from "@/share/constants/layout";
 import { cn } from "@/share/utils/tailwind-merge";
 
 const NAV_ITEMS = [
@@ -23,8 +23,8 @@ export default function BottomNav() {
 
 	return (
 		<nav
-			style={{ maxWidth: LAYOUT_MAX_WIDTH_PX }}
-			className="fixed bottom-0 left-1/2 z-40 flex h-16 w-full -translate-x-1/2 items-center justify-around border-t border-border bg-card/95 px-2 backdrop-blur supports-backdrop-filter:bg-card/80"
+			style={{ height: BOTTOM_NAV_HEIGHT_PX, maxWidth: LAYOUT_MAX_WIDTH_PX }}
+			className="fixed bottom-0 left-1/2 z-40 flex w-full -translate-x-1/2 items-center justify-around border-t border-border bg-card/95 px-2 backdrop-blur supports-backdrop-filter:bg-card/80"
 		>
 			{NAV_ITEMS.map(item => {
 				const active = isActivePath(pathname, item.href);

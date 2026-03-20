@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckCircle2, ChevronDown, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -29,6 +30,8 @@ const GENRES = [
 ] as const;
 
 const uploadSchema = z.object({
+	genre: z.string().optional(),
+	description: z.string().max(500).optional(),
 	trackTitle: z.string().min(1, "Track title is required").max(100),
 	artistName: z.string().min(1, "Artist name is required").max(100),
 	youtubeUrl: z
@@ -42,8 +45,6 @@ const uploadSchema = z.object({
 				),
 			"Must be a valid YouTube URL",
 		),
-	genre: z.string().optional(),
-	description: z.string().max(500).optional(),
 });
 
 type UploadFormValues = z.infer<typeof uploadSchema>;
@@ -56,8 +57,8 @@ function StepIndicator({ step }: { step: 1 | 2 }) {
 			</span>
 			<div className="h-1 w-16 overflow-hidden rounded-full bg-primary/20">
 				<div
-					className="h-full rounded-full bg-primary transition-all duration-300"
 					style={{ width: step === 1 ? "50%" : "100%" }}
+					className="h-full rounded-full bg-primary transition-all duration-300"
 				/>
 			</div>
 		</div>
@@ -66,7 +67,7 @@ function StepIndicator({ step }: { step: 1 | 2 }) {
 
 function StepOne({ onContinue }: { onContinue: () => void }) {
 	return (
-		<div className="flex flex-col gap-6">
+		<div className="flex h-full flex-col gap-6">
 			<div className="flex items-start justify-between">
 				<h1 className="text-2xl font-bold leading-tight text-card-foreground">
 					Upload Your
@@ -116,15 +117,19 @@ function StepOne({ onContinue }: { onContinue: () => void }) {
 				transparently.
 			</p>
 
-			<div className="flex flex-col gap-3">
+			<div className="mt-auto flex flex-col gap-3 pb-1">
 				<Button
 					type="button"
 					onClick={onContinue}
-					className="w-full rounded-xl bg-primary py-6 text-base font-bold text-primary-foreground"
+					className="w-full rounded-xl bg-primary py-8 text-xl font-bold text-primary-foreground"
 				>
 					Continue
 				</Button>
-				<Button asChild variant="outline" className="w-full rounded-xl py-6 text-base font-medium">
+				<Button
+					asChild
+					variant="outline"
+					className="w-full rounded-xl  py-8 text-xl font-bold text-primary-foreground"
+				>
 					<Link href="/discovery">Cancel</Link>
 				</Button>
 			</div>
@@ -133,6 +138,7 @@ function StepOne({ onContinue }: { onContinue: () => void }) {
 }
 
 function StepTwo({ onBack }: { onBack: () => void }) {
+	const router = useRouter();
 	const {
 		register,
 		handleSubmit,
@@ -140,27 +146,22 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 	} = useForm<UploadFormValues>({
 		resolver: zodResolver(uploadSchema),
 		defaultValues: {
+			genre: "",
 			trackTitle: "",
 			artistName: "",
 			youtubeUrl: "",
-			genre: "",
 			description: "",
 		},
 	});
 
-	const onSubmit = async (_data: UploadFormValues) => {
-		// TODO: submit to API
-		await new Promise(r => setTimeout(r, 1500));
+	const onSubmit = async () => {
+		router.push("/discovery/upload/processing?result=success");
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+		<form onSubmit={handleSubmit(onSubmit)} className="flex h-full flex-col gap-6">
 			<div className="flex items-start justify-between">
-				<h1 className="text-2xl font-bold leading-tight text-card-foreground">
-					Upload Your
-					<br />
-					Music
-				</h1>
+				<h1 className="text-2xl font-bold leading-tight text-card-foreground">Upload Your Music</h1>
 				<StepIndicator step={2} />
 			</div>
 
@@ -169,7 +170,7 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 				<p className="text-sm font-bold text-card-foreground">Short-form Ready Music</p>
 			</div>
 
-			<fieldset className="flex flex-col gap-5" disabled={isSubmitting}>
+			<fieldset disabled={isSubmitting} className="flex flex-1 flex-col gap-5 overflow-y-auto pr-1">
 				<div className="flex flex-col gap-1.5">
 					<label htmlFor="trackTitle" className="text-sm font-semibold text-card-foreground">
 						Track Title <span className="font-normal text-muted-foreground">(Required)</span>
@@ -178,7 +179,7 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 						id="trackTitle"
 						{...register("trackTitle")}
 						placeholder="Enter track title"
-						className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+						className="rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
 					/>
 					{errors.trackTitle && (
 						<p className="text-xs text-destructive">{errors.trackTitle.message}</p>
@@ -193,7 +194,7 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 						id="artistName"
 						{...register("artistName")}
 						placeholder="Enter artist name"
-						className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+						className="rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
 					/>
 					{errors.artistName && (
 						<p className="text-xs text-destructive">{errors.artistName.message}</p>
@@ -208,7 +209,7 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 						id="youtubeUrl"
 						{...register("youtubeUrl")}
 						placeholder="https://youtube.com/watch?v=..."
-						className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+						className="rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
 					/>
 					{errors.youtubeUrl && (
 						<p className="text-xs text-destructive">{errors.youtubeUrl.message}</p>
@@ -223,8 +224,8 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 						<select
 							id="genre"
 							{...register("genre")}
-							className="w-full appearance-none rounded-xl border border-border bg-card px-4 py-3 text-sm text-card-foreground focus:border-primary focus:outline-none"
 							defaultValue=""
+							className="w-full appearance-none rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
 						>
 							<option value="" disabled>
 								Select a genre
@@ -248,12 +249,12 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 						{...register("description")}
 						rows={3}
 						placeholder="Tell us about this track..."
-						className="resize-none rounded-xl border border-border bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
+						className="resize-none rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
 					/>
 				</div>
 			</fieldset>
 
-			<div className="flex flex-col gap-3">
+			<div className="mt-auto grid grid-cols-2 gap-3 pb-1">
 				<Button
 					type="submit"
 					disabled={isSubmitting}
@@ -270,8 +271,8 @@ function StepTwo({ onBack }: { onBack: () => void }) {
 				</Button>
 				<Button
 					type="button"
-					variant="outline"
 					onClick={onBack}
+					variant="outline"
 					disabled={isSubmitting}
 					className="w-full rounded-xl py-6 text-base font-medium"
 				>
@@ -286,7 +287,7 @@ export default function DiscoveryUploadPage() {
 	const [step, setStep] = useState<1 | 2>(1);
 
 	return (
-		<div className="flex flex-col px-5 py-8 pb-24">
+		<div className="flex h-full flex-col px-5 py-8">
 			{step === 1 ? (
 				<StepOne onContinue={() => setStep(2)} />
 			) : (
