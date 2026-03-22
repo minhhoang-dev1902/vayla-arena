@@ -1,43 +1,30 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CheckCircle2, ChevronDown, Loader2, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, RefreshCw, Shield } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Button } from "@/share/components/ui/button";
-
-const TEAL = "#14b8a6";
 
 type OverlayState = "idle" | "confirming" | "success" | "failed";
 
-const CRITERIA = [
-	"Music is under 1 minute",
-	"Video is uploaded to YouTube",
-	"This is original content",
-	"Maximum 2 uploads per musician",
+const CHALLENGES = [
+	{ id: "summer", label: "Summer Discovery" },
+	{ id: "neon", label: "Neon Nights Remix" },
+	{ id: "beat", label: "Beat Battle" },
 ] as const;
 
-const GENRES = [
-	"Pop",
-	"Hip-Hop",
-	"R&B",
-	"Electronic",
-	"Rock",
-	"Jazz",
-	"Classical",
-	"Lo-fi",
-	"Indie",
-	"Other",
-] as const;
+const DAILY_LIMIT = 2;
+const UPLOAD_COST = 10;
+const PLATFORM_BALANCE = 50;
 
 const uploadSchema = z.object({
-	genre: z.string().optional(),
-	description: z.string().max(500).optional(),
 	trackTitle: z.string().min(1, "Track title is required").max(100),
 	artistName: z.string().min(1, "Artist name is required").max(100),
+	challenge: z.string().min(1, "Please select a challenge"),
 	youtubeUrl: z
 		.string()
 		.min(1, "YouTube URL is required")
@@ -49,27 +36,36 @@ const uploadSchema = z.object({
 				),
 			"Must be a valid YouTube URL",
 		),
+	description: z.string().max(500).optional(),
 });
 
 type UploadFormValues = z.infer<typeof uploadSchema>;
+
+function youtubeThumbFromUrl(url: string): string | null {
+	try {
+		const u = new URL(url);
+		let videoId: string | null = null;
+		if (u.hostname.includes("youtube.com")) videoId = u.searchParams.get("v");
+		else if (u.hostname.includes("youtu.be")) videoId = u.pathname.slice(1);
+		return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
+	} catch {
+		return null;
+	}
+}
 
 /* ── Confirming overlay ── */
 function ConfirmingOverlay() {
 	return (
 		<div className="fixed inset-0 z-[200] flex flex-col items-center bg-gradient-to-b from-[#eaf9f7] via-[#f4fdfb] to-white px-6 py-14">
 			<div className="flex-1" />
-
 			<div className="flex flex-col items-center">
 				<div className="relative flex size-36 items-center justify-center">
-					<div className="absolute inset-0 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite] rounded-full border border-[#14b8a6]/15" />
-					<div className="absolute inset-3 rounded-full border border-[#14b8a6]/10 bg-[#14b8a6]/5" />
-					<div className="relative flex size-24 items-center justify-center rounded-full border-4 border-[#14b8a6] bg-[#d7f2ef] shadow-[0_0_0_10px_rgba(20,184,166,0.08),0_20px_45px_rgba(20,184,166,0.15)]">
-						<span className="text-5xl font-semibold" style={{ color: TEAL }}>
-							V
-						</span>
+					<div className="absolute inset-0 animate-[ping_2.5s_cubic-bezier(0,0,0.2,1)_infinite] rounded-full border border-primary/15" />
+					<div className="absolute inset-3 rounded-full border border-primary/10 bg-primary/5" />
+					<div className="relative flex size-24 items-center justify-center rounded-full border-4 border-primary bg-[#d7f2ef] shadow-[0_0_0_10px_rgba(20,184,166,0.08),0_20px_45px_rgba(20,184,166,0.15)]">
+						<span className="text-5xl font-semibold text-primary">V</span>
 					</div>
 				</div>
-
 				<p className="mt-9 text-[10px] font-semibold uppercase tracking-[0.35em] text-[#67bdb8]">
 					Wallet Gate
 				</p>
@@ -79,25 +75,22 @@ function ConfirmingOverlay() {
 					on-chain…
 				</h1>
 			</div>
-
 			<div className="flex-1" />
-
 			<div className="w-full max-w-[300px]">
 				<div className="h-1.5 w-full overflow-hidden rounded-full bg-[#c9d9df]">
 					<div
 						className="h-full rounded-full"
 						style={{
-							background: `linear-gradient(90deg, ${TEAL}, #0d9488)`,
+							background: "linear-gradient(90deg, var(--primary), #0d9488)",
 							animation: "upload-progress 2s ease-in-out infinite",
 						}}
 					/>
 				</div>
 				<p className="mt-5 flex items-center justify-center gap-2 text-sm text-[#83919a]">
-					<span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: TEAL }} />
+					<span className="size-2 shrink-0 rounded-full bg-primary" />
 					Securing transaction
 				</p>
 			</div>
-
 			<style>{`
 				@keyframes upload-progress {
 					0%, 100% { width: 40%; opacity: 0.8; }
@@ -109,20 +102,13 @@ function ConfirmingOverlay() {
 }
 
 /* ── Success overlay ── */
-function SuccessOverlay({
-	onViewUpload,
-	onClose,
-}: {
-	onViewUpload: () => void;
-	onClose: () => void;
-}) {
+function SuccessOverlay({ onClose }: { onClose: () => void }) {
 	return (
 		<div className="fixed inset-0 z-[200] flex flex-col items-center bg-gradient-to-b from-[#e8faf8] via-[#f0fdfa] to-white px-6 pt-20 pb-8">
 			<div className="flex flex-col items-center">
-				<div className="flex size-16 items-center justify-center rounded-full bg-[#ccfbf1] shadow-md shadow-[#14b8a6]/10">
-					<CheckCircle2 className="size-9" style={{ color: TEAL }} />
+				<div className="flex size-16 items-center justify-center rounded-full bg-[#ccfbf1] shadow-md shadow-primary/10">
+					<CheckCircle2 className="size-9 text-primary" />
 				</div>
-
 				<h1 className="mt-8 text-center text-[26px] leading-tight font-extrabold text-[#184f4d]">
 					Upload Submitted
 					<br />
@@ -132,24 +118,16 @@ function SuccessOverlay({
 					Your track has been recorded on-chain.
 				</p>
 			</div>
-
 			<div className="mt-auto w-full max-w-sm pt-8">
 				<button
 					type="button"
-					onClick={onViewUpload}
-					className="flex h-13 w-full items-center justify-center rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
+					onClick={onClose}
+					className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
 					style={{
-						background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+						background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 					}}
 				>
-					View My Upload
-				</button>
-				<button
-					type="button"
-					onClick={onClose}
-					className="mt-3 flex h-13 w-full items-center justify-center text-sm font-extrabold tracking-wider text-[#64748b] transition hover:text-[#475569]"
-				>
-					Close
+					Back to Discovery
 				</button>
 			</div>
 		</div>
@@ -168,38 +146,26 @@ function FailedOverlay({ onRetry, onClose }: { onRetry: () => void; onClose: () 
 						<AlertCircle className="size-8 text-[#ef4444]" />
 					</div>
 				</div>
-
 				<h1 className="mt-8 text-center text-[26px] leading-tight font-extrabold text-[#1b2436]">
 					Transaction Failed
 				</h1>
-				<p className="mt-2 text-center text-base font-semibold" style={{ color: TEAL }}>
-					No VAYLA was used.
-				</p>
-				<p className="mt-6 text-center text-sm leading-relaxed text-[#94a3b8]">
-					Your digital assets remain secure in
-					<br />
-					your wallet. The network was unable to
-					<br />
-					process this request at the moment.
-				</p>
+				<p className="mt-2 text-center text-base font-semibold text-primary">No VAYLA was used.</p>
 			</div>
-
 			<div className="mt-auto w-full max-w-sm pt-8">
 				<div className="grid grid-cols-2 gap-3">
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex h-13 items-center justify-center rounded-full border border-[#14b8a6] text-sm font-extrabold tracking-wider transition hover:bg-[#f0fdfa]"
-						style={{ color: TEAL }}
+						className="flex h-12 items-center justify-center rounded-full border border-primary text-sm font-extrabold text-primary transition hover:bg-[#f0fdfa]"
 					>
 						Close
 					</button>
 					<button
 						type="button"
 						onClick={onRetry}
-						className="flex h-13 items-center justify-center gap-2 rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
+						className="flex h-12 items-center justify-center gap-2 rounded-full text-sm font-extrabold text-white transition active:scale-[0.98]"
 						style={{
-							background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+							background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 						}}
 					>
 						<RefreshCw className="size-4" />
@@ -211,248 +177,36 @@ function FailedOverlay({ onRetry, onClose }: { onRetry: () => void; onClose: () 
 	);
 }
 
-/* ── Step indicator ── */
-function StepIndicator({ step }: { step: 1 | 2 }) {
-	return (
-		<div className="flex flex-col items-end gap-1.5">
-			<span className="text-xs font-bold uppercase tracking-wide text-primary">
-				Step {step} of 2
-			</span>
-			<div className="h-1 w-16 overflow-hidden rounded-full bg-primary/20">
-				<div
-					style={{ width: step === 1 ? "50%" : "100%" }}
-					className="h-full rounded-full bg-primary transition-all duration-300"
-				/>
-			</div>
-		</div>
-	);
-}
+/* ── Main page ── */
+export default function DiscoveryUploadPage() {
+	const router = useRouter();
+	const [overlayState, setOverlayState] = useState<OverlayState>("idle");
+	const [selectedChallenge, setSelectedChallenge] = useState<string>(CHALLENGES[0].id);
+	const [youtubePreviewUrl, setYoutubePreviewUrl] = useState<string>("");
+	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-/* ── Step 1 ── */
-function StepOne({ onContinue }: { onContinue: () => void }) {
-	return (
-		<div className="flex h-full flex-col gap-6">
-			<div className="flex items-start justify-between">
-				<h1 className="text-2xl font-bold leading-tight text-card-foreground">
-					Upload Your
-					<br />
-					Music
-				</h1>
-				<StepIndicator step={1} />
-			</div>
-
-			<div>
-				<p className="text-sm font-semibold text-primary">[February Theme]</p>
-				<p className="text-sm font-bold text-card-foreground">Short-form Ready Music</p>
-				<p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-					Please ensure your content meets the following criteria for this discovery pool.
-				</p>
-			</div>
-
-			<ul className="flex flex-col gap-3">
-				{CRITERIA.map(item => (
-					<li key={item} className="flex items-center gap-3">
-						<CheckCircle2 className="size-6 shrink-0 text-primary" />
-						<span className="text-sm text-card-foreground">{item}</span>
-					</li>
-				))}
-			</ul>
-
-			<div className="rounded-xl border border-border bg-card p-4">
-				<div className="flex items-center gap-3">
-					<div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-						<span className="text-lg font-bold text-primary">V</span>
-					</div>
-					<div>
-						<p className="text-sm font-semibold text-card-foreground">
-							Total cost: 1 VAYLA + Network Fee
-						</p>
-						<p className="mt-0.5 flex items-center gap-1 text-xs text-primary">
-							<CheckCircle2 className="size-3.5" />
-							No BNB required
-						</p>
-					</div>
-				</div>
-			</div>
-
-			<p className="text-xs leading-relaxed text-muted-foreground">
-				<CheckCircle2 className="mr-1 inline size-3 text-muted-foreground" />
-				Your transaction will be processed on the VAYLA Discovery network securely and
-				transparently.
-			</p>
-
-			<div className="mt-auto flex flex-col gap-3 pb-1">
-				<Button
-					type="button"
-					onClick={onContinue}
-					className="w-full rounded-xl bg-primary py-8 text-xl font-bold text-primary-foreground"
-				>
-					Continue
-				</Button>
-				<Button
-					asChild
-					variant="outline"
-					className="w-full rounded-xl py-8 text-xl font-bold text-primary-foreground"
-				>
-					<Link href="/discovery">Cancel</Link>
-				</Button>
-			</div>
-		</div>
-	);
-}
-
-/* ── Step 2 ── */
-function StepTwo({ onBack, onSubmit }: { onBack: () => void; onSubmit: () => void }) {
 	const {
 		register,
 		handleSubmit,
+		watch,
 		formState: { errors, isSubmitting },
 	} = useForm<UploadFormValues>({
 		resolver: zodResolver(uploadSchema),
 		defaultValues: {
-			genre: "",
 			trackTitle: "",
 			artistName: "",
+			challenge: CHALLENGES[0].id,
 			youtubeUrl: "",
 			description: "",
 		},
 	});
 
-	const handleFormSubmit = async () => {
-		onSubmit();
-	};
+	const youtubeUrlValue = watch("youtubeUrl");
 
-	return (
-		<form onSubmit={handleSubmit(handleFormSubmit)} className="flex h-full flex-col gap-6">
-			<div className="flex items-start justify-between">
-				<h1 className="text-2xl font-bold leading-tight text-card-foreground">Upload Your Music</h1>
-				<StepIndicator step={2} />
-			</div>
-
-			<div>
-				<p className="text-sm font-semibold text-primary">[February Theme]</p>
-				<p className="text-sm font-bold text-card-foreground">Short-form Ready Music</p>
-			</div>
-
-			<fieldset disabled={isSubmitting} className="flex flex-1 flex-col gap-5 overflow-y-auto pr-1">
-				<div className="flex flex-col gap-1.5">
-					<label htmlFor="trackTitle" className="text-sm font-semibold text-card-foreground">
-						Track Title <span className="font-normal text-muted-foreground">(Required)</span>
-					</label>
-					<input
-						id="trackTitle"
-						{...register("trackTitle")}
-						placeholder="Enter track title"
-						className="rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
-					/>
-					{errors.trackTitle && (
-						<p className="text-xs text-destructive">{errors.trackTitle.message}</p>
-					)}
-				</div>
-
-				<div className="flex flex-col gap-1.5">
-					<label htmlFor="artistName" className="text-sm font-semibold text-card-foreground">
-						Artist Name <span className="font-normal text-muted-foreground">(Required)</span>
-					</label>
-					<input
-						id="artistName"
-						{...register("artistName")}
-						placeholder="Enter artist name"
-						className="rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
-					/>
-					{errors.artistName && (
-						<p className="text-xs text-destructive">{errors.artistName.message}</p>
-					)}
-				</div>
-
-				<div className="flex flex-col gap-1.5">
-					<label htmlFor="youtubeUrl" className="text-sm font-semibold text-card-foreground">
-						YouTube URL <span className="font-normal text-muted-foreground">(Required)</span>
-					</label>
-					<input
-						id="youtubeUrl"
-						{...register("youtubeUrl")}
-						placeholder="https://youtube.com/watch?v=..."
-						className="rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
-					/>
-					{errors.youtubeUrl && (
-						<p className="text-xs text-destructive">{errors.youtubeUrl.message}</p>
-					)}
-				</div>
-
-				<div className="flex flex-col gap-1.5">
-					<label htmlFor="genre" className="text-sm font-semibold text-card-foreground">
-						Genre <span className="font-normal text-muted-foreground">(Optional)</span>
-					</label>
-					<div className="relative">
-						<select
-							id="genre"
-							{...register("genre")}
-							defaultValue=""
-							className="w-full appearance-none rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
-						>
-							<option value="" disabled>
-								Select a genre
-							</option>
-							{GENRES.map(g => (
-								<option key={g} value={g}>
-									{g}
-								</option>
-							))}
-						</select>
-						<ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-					</div>
-				</div>
-
-				<div className="flex flex-col gap-1.5">
-					<label htmlFor="description" className="text-sm font-semibold text-card-foreground">
-						Description <span className="font-normal text-muted-foreground">(Optional)</span>
-					</label>
-					<textarea
-						id="description"
-						{...register("description")}
-						rows={3}
-						placeholder="Tell us about this track..."
-						className="resize-none rounded-xl border border-primary/45 bg-card px-4 py-3 text-sm text-card-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary/50 focus:outline-none"
-					/>
-				</div>
-			</fieldset>
-
-			<div className="mt-auto grid grid-cols-2 gap-3 pb-1">
-				<Button
-					type="submit"
-					disabled={isSubmitting}
-					className="w-full rounded-xl bg-primary py-6 text-base font-bold text-primary-foreground"
-				>
-					{isSubmitting ? (
-						<>
-							<Loader2 className="size-5 animate-spin" />
-							Submitting...
-						</>
-					) : (
-						"Submit & Pay"
-					)}
-				</Button>
-				<Button
-					type="button"
-					onClick={onBack}
-					variant="outline"
-					disabled={isSubmitting}
-					className="w-full rounded-xl py-6 text-base font-medium"
-				>
-					Back
-				</Button>
-			</div>
-		</form>
-	);
-}
-
-/* ── Main page ── */
-export default function DiscoveryUploadPage() {
-	const router = useRouter();
-	const [step, setStep] = useState<1 | 2>(1);
-	const [overlayState, setOverlayState] = useState<OverlayState>("idle");
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => {
+		const thumb = youtubeThumbFromUrl(youtubeUrlValue ?? "");
+		setYoutubePreviewUrl(thumb ?? "");
+	}, [youtubeUrlValue]);
 
 	useEffect(() => {
 		return () => {
@@ -472,24 +226,233 @@ export default function DiscoveryUploadPage() {
 		submitUpload();
 	}, [submitUpload]);
 
+	const onSubmit = () => {
+		submitUpload();
+	};
+
 	return (
 		<>
-			<div className="flex h-full flex-col px-5 py-8">
-				{step === 1 ? (
-					<StepOne onContinue={() => setStep(2)} />
-				) : (
-					<StepTwo onBack={() => setStep(1)} onSubmit={submitUpload} />
-				)}
+			<div className="min-h-dvh bg-white">
+				{/* Header */}
+				<div className="flex items-center gap-3 border-b border-[#f1f5f9] px-4 py-3.5">
+					<Link
+						href="/discovery"
+						className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-slate-100"
+						aria-label="Back"
+					>
+						<ArrowLeft className="size-5" />
+					</Link>
+					<div>
+						<h1 className="text-[15px] font-bold text-[#0f172a]">Submit Track</h1>
+						<p className="text-[11px] text-[#94a3b8]">Submit your track to an active challenge</p>
+					</div>
+				</div>
+
+				<form onSubmit={handleSubmit(onSubmit)} className="px-4 py-5 space-y-5">
+					{/* Track title */}
+					<div className="space-y-1.5">
+						<label
+							htmlFor="trackTitle"
+							className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]"
+						>
+							Track
+						</label>
+						<input
+							id="trackTitle"
+							{...register("trackTitle")}
+							placeholder="Enter track title"
+							className="w-full rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+						/>
+						{errors.trackTitle && (
+							<p className="text-xs text-red-500">{errors.trackTitle.message}</p>
+						)}
+					</div>
+
+					{/* Artist name */}
+					<div className="space-y-1.5">
+						<label
+							htmlFor="artistName"
+							className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]"
+						>
+							Artist Name
+						</label>
+						<input
+							id="artistName"
+							{...register("artistName")}
+							placeholder="Artist or band name"
+							className="w-full rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+						/>
+						{errors.artistName && (
+							<p className="text-xs text-red-500">{errors.artistName.message}</p>
+						)}
+					</div>
+
+					{/* Challenge selection */}
+					<div className="space-y-2">
+						<p className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]">
+							Challenge Selection
+						</p>
+						<div className="flex gap-2">
+							{CHALLENGES.map(c => {
+								const isSelected = selectedChallenge === c.id;
+								return (
+									<button
+										key={c.id}
+										type="button"
+										onClick={() => setSelectedChallenge(c.id)}
+										className={`flex flex-1 flex-col items-center gap-2 rounded-xl border px-2 py-3 transition ${
+											isSelected ? "border-primary bg-white" : "border-[#e2e8f0] bg-white"
+										}`}
+									>
+										<span
+											className={`flex size-4 items-center justify-center rounded-full border-2 ${
+												isSelected ? "border-primary bg-primary" : "border-[#cbd5e1] bg-white"
+											}`}
+										>
+											{isSelected && <span className="size-1.5 rounded-full bg-white" />}
+										</span>
+										<span
+											className={`text-center text-[11px] font-semibold leading-tight ${
+												isSelected ? "text-[#0f172a]" : "text-[#94a3b8]"
+											}`}
+										>
+											{c.label}
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					</div>
+
+					{/* YouTube URL */}
+					<div className="space-y-2">
+						<label
+							htmlFor="youtubeUrl"
+							className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]"
+						>
+							YouTube Embed Link
+						</label>
+						<input
+							id="youtubeUrl"
+							{...register("youtubeUrl")}
+							placeholder="https://youtube.com/watch?v=..."
+							className="w-full rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+						/>
+						{errors.youtubeUrl && (
+							<p className="text-xs text-red-500">{errors.youtubeUrl.message}</p>
+						)}
+						{/* Preview card */}
+						<div className="flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-3">
+							<div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-primary/20">
+								{youtubePreviewUrl ? (
+									<Image
+										src={youtubePreviewUrl}
+										alt="preview"
+										fill
+										className="object-cover"
+										sizes="56px"
+									/>
+								) : (
+									<div className="flex size-full items-center justify-center">
+										<span className="text-lg text-primary/40">▶</span>
+									</div>
+								)}
+							</div>
+							<p className="text-xs leading-relaxed text-[#47817a]">
+								Paste a public YouTube embed link to preview your track here.
+							</p>
+						</div>
+					</div>
+
+					{/* Short description */}
+					<div className="space-y-1.5">
+						<label
+							htmlFor="description"
+							className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]"
+						>
+							Short Description
+						</label>
+						<textarea
+							id="description"
+							{...register("description")}
+							rows={3}
+							placeholder="Add a short description of the track and its mood"
+							className="w-full resize-none rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+						/>
+					</div>
+
+					{/* AI note */}
+					<p className="text-[11px] text-primary">
+						<span className="font-bold">NOTE:</span> AI-generated music is allowed — disclose if
+						primarily AI-assisted.
+					</p>
+
+					{/* Policy card */}
+					<div className="rounded-2xl border border-[#e8f0f6] bg-white p-4 shadow-sm">
+						<div className="flex items-center justify-between">
+							<p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
+								Policy
+							</p>
+							<Shield className="size-5 text-[#cbd5e1]" />
+						</div>
+						<h3 className="mt-1 text-base font-extrabold text-[#0f172a]">Submission Rules</h3>
+
+						<div className="mt-3 grid grid-cols-2 gap-2">
+							<div className="rounded-xl border border-[#f1f5f9] bg-[#f8fafb] p-3">
+								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
+									Daily Upload Limit
+								</p>
+								<p className="mt-1 text-[15px] font-extrabold text-[#0f172a]">
+									{DAILY_LIMIT} tracks
+								</p>
+							</div>
+							<div className="rounded-xl border border-[#f1f5f9] bg-[#f8fafb] p-3">
+								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
+									Upload Cost
+								</p>
+								<p className="mt-1 text-[15px] font-extrabold text-[#0f172a]">
+									{UPLOAD_COST} VAYLA
+								</p>
+							</div>
+						</div>
+
+						<div className="mt-2 flex items-center justify-between rounded-xl border border-[#f1f5f9] bg-[#f8fafb] p-3">
+							<div>
+								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
+									Platform Balance
+								</p>
+								<p className="mt-1 text-[15px] font-extrabold text-[#0f172a]">
+									{PLATFORM_BALANCE} VAYLA
+								</p>
+							</div>
+							<div className="flex size-9 items-center justify-center rounded-full bg-primary">
+								<span className="text-sm font-extrabold text-white">V</span>
+							</div>
+						</div>
+					</div>
+
+					{/* Submit button */}
+					<div className="pb-6">
+						<button
+							type="submit"
+							disabled={isSubmitting}
+							className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold text-white transition active:scale-[0.98] disabled:opacity-60"
+							style={{
+								background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
+							}}
+						>
+							Submit for Review
+						</button>
+						<p className="mt-2.5 text-center text-[9px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
+							Tracks are published only after admin approval
+						</p>
+					</div>
+				</form>
 			</div>
 
 			{overlayState === "confirming" && <ConfirmingOverlay />}
 
-			{overlayState === "success" && (
-				<SuccessOverlay
-					onViewUpload={() => router.push("/discovery")}
-					onClose={() => router.push("/discovery")}
-				/>
-			)}
+			{overlayState === "success" && <SuccessOverlay onClose={() => router.push("/discovery")} />}
 
 			{overlayState === "failed" && (
 				<FailedOverlay onRetry={handleRetry} onClose={() => setOverlayState("idle")} />

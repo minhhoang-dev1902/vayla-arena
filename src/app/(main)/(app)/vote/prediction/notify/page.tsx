@@ -3,8 +3,6 @@
 import { ArrowLeft, Award, Bell } from "lucide-react";
 import Link from "next/link";
 
-const TEAL = "#14b8a6";
-
 export default function PredictionNotifyPage() {
 	return (
 		<div className="flex min-h-0 w-full flex-1 flex-col bg-white">
@@ -27,20 +25,12 @@ export default function PredictionNotifyPage() {
 					<div className="absolute inset-0 rounded-full bg-gradient-to-b from-[#e8faf8] to-[#f0fdfa]" />
 
 					{/* Sparkles */}
-					<span className="absolute top-4 left-6 text-lg" style={{ color: TEAL, opacity: 0.4 }}>
-						✦
-					</span>
-					<span
-						className="absolute top-8 right-6 size-2 rounded-full"
-						style={{ backgroundColor: TEAL, opacity: 0.3 }}
-					/>
-					<span
-						className="absolute right-10 bottom-12 size-3 rotate-45"
-						style={{ backgroundColor: TEAL, opacity: 0.2 }}
-					/>
+					<span className="absolute top-4 left-6 text-lg text-primary opacity-40">✦</span>
+					<span className="absolute top-8 right-6 size-2 rounded-full bg-primary opacity-30" />
+					<span className="absolute right-10 bottom-12 size-3 rotate-45 bg-primary opacity-20" />
 
-					<div className="relative flex size-24 items-center justify-center rounded-full bg-white shadow-lg shadow-[#14b8a6]/10">
-						<Bell className="size-12" style={{ color: TEAL }} strokeWidth={2.5} />
+					<div className="relative flex size-24 items-center justify-center rounded-full bg-white shadow-lg shadow-primary/10">
+						<Bell className="size-12 text-primary" strokeWidth={2.5} />
 					</div>
 				</div>
 
@@ -58,10 +48,7 @@ export default function PredictionNotifyPage() {
 
 				{/* Early Supporter Benefit */}
 				<div className="mt-8 w-full max-w-sm rounded-2xl border border-[#e8f0f6] bg-[#fafcfd] p-5">
-					<p
-						className="text-center text-[10px] font-bold uppercase tracking-[0.3em]"
-						style={{ color: TEAL }}
-					>
+					<p className="text-center text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
 						Early Supporter Benefit
 					</p>
 
@@ -85,7 +72,7 @@ export default function PredictionNotifyPage() {
 						href="/"
 						className="flex h-14 w-full items-center justify-center rounded-full text-sm font-extrabold uppercase tracking-wider text-white transition active:scale-[0.98]"
 						style={{
-							background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+							background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 						}}
 					>
 						Back to Home

@@ -63,7 +63,7 @@ export default function ConnectWalletPage() {
 	}
 
 	return (
-		<div className="relative flex min-h-screen flex-col overflow-hidden bg-[#020816] text-white">
+		<div className="relative flex h-dvh flex-col overflow-y-auto bg-[#020816] text-white">
 			<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_80%,rgba(37,229,221,0.12),transparent_50%),linear-gradient(180deg,#05142a_0%,#010714_100%)]" />
 
 			<div className="relative z-10 mt-auto flex flex-col">

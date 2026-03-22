@@ -3,7 +3,6 @@
 import { ArrowRight, BarChart3, CheckCircle2, Link2 } from "lucide-react";
 import Link from "next/link";
 
-const TEAL = "#14b8a6";
 const DARK = "#020816";
 
 const STATS = [
@@ -41,7 +40,7 @@ export default function VotePage() {
 				<div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(20,184,166,0.15),transparent_60%)]" />
 
 				<div className="relative z-10">
-					<p className="text-[10px] font-bold uppercase tracking-[0.3em]" style={{ color: TEAL }}>
+					<p className="text-[10px] font-bold uppercase tracking-[0.3em] text-primary">
 						On-Chain Live Network
 					</p>
 
@@ -88,10 +87,7 @@ export default function VotePage() {
 							<h2 className="text-lg font-extrabold text-white">Monthly Theme</h2>
 							<h3 className="text-lg font-extrabold text-white">Vote</h3>
 						</div>
-						<span
-							className="rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-white"
-							style={{ backgroundColor: TEAL }}
-						>
+						<span className="rounded-full bg-primary px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-white">
 							Active
 						</span>
 					</div>
@@ -103,11 +99,11 @@ export default function VotePage() {
 
 					<div className="mt-4 flex flex-col gap-2">
 						<div className="flex items-center gap-2">
-							<CheckCircle2 className="size-4" style={{ color: TEAL }} />
+							<CheckCircle2 className="size-4 text-primary" />
 							<span className="text-xs font-semibold text-[#c0e8dd]">5 Curated Themes</span>
 						</div>
 						<div className="flex items-center gap-2">
-							<CheckCircle2 className="size-4" style={{ color: TEAL }} />
+							<CheckCircle2 className="size-4 text-primary" />
 							<span className="text-xs font-semibold text-[#c0e8dd]">Gasless On-Chain Voting</span>
 						</div>
 					</div>
@@ -116,7 +112,7 @@ export default function VotePage() {
 						href="/discovery/vote"
 						className="mt-5 flex h-12 w-full items-center justify-center rounded-xl text-sm font-extrabold uppercase tracking-wider text-white transition active:scale-[0.98]"
 						style={{
-							background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+							background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 						}}
 					>
 						Go to Monthly Theme Vote
@@ -137,7 +133,7 @@ export default function VotePage() {
 								className="flex size-11 shrink-0 items-center justify-center rounded-xl"
 								style={{ backgroundColor: "rgba(20,184,166,0.1)" }}
 							>
-								<item.icon className="size-5" style={{ color: TEAL }} />
+								<item.icon className="size-5 text-primary" />
 							</div>
 							<div>
 								<p className="text-sm font-bold text-[#0f172a]">{item.title}</p>
@@ -158,7 +154,7 @@ export default function VotePage() {
 				>
 					<div className="flex items-center gap-2">
 						<h2 className="text-base font-extrabold text-[#0f172a]">What&apos;s Coming Next</h2>
-						<span className="rounded-full bg-[#14b8a6]/15 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#0f766e]">
+						<span className="rounded-full bg-primary/15 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#0f766e]">
 							Coming Soon
 						</span>
 					</div>
@@ -170,8 +166,7 @@ export default function VotePage() {
 
 					<Link
 						href="/vote/prediction"
-						className="mt-4 inline-flex items-center gap-1 text-sm font-bold uppercase"
-						style={{ color: TEAL }}
+						className="mt-4 inline-flex items-center gap-1 text-sm font-bold uppercase text-primary"
 					>
 						Learn More
 						<ArrowRight className="size-4" />
@@ -186,10 +181,8 @@ export default function VotePage() {
 				</p>
 				<p className="mt-3 text-sm leading-relaxed text-[#475569]">
 					V-Onchain Chart isn&apos;t just a list. It&apos;s a{" "}
-					<span className="font-bold italic" style={{ color: TEAL }}>
-						validated sentiment layer
-					</span>
-					. By using on-chain signals, we capture the true commitment of fans, filtering out noise.
+					<span className="font-bold italic text-primary">validated sentiment layer</span>. By using
+					on-chain signals, we capture the true commitment of fans, filtering out noise.
 				</p>
 			</section>
 		</div>

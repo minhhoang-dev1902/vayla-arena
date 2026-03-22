@@ -5,8 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-const TEAL = "#14b8a6";
-
 const STEPS = [
 	{
 		num: 1,
@@ -62,10 +60,7 @@ export default function PredictionVotePage() {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
 
 					<div className="absolute inset-0 flex flex-col justify-end p-5">
-						<span
-							className="mb-3 w-fit rounded-full px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-white"
-							style={{ backgroundColor: TEAL }}
-						>
+						<span className="mb-3 w-fit rounded-full bg-primary px-3 py-1 text-[9px] font-bold uppercase tracking-wider text-white">
 							Live Rewards
 						</span>
 						<h2 className="text-2xl leading-tight font-extrabold text-white">
@@ -89,7 +84,7 @@ export default function PredictionVotePage() {
 				<div className="mt-6 flex flex-col gap-8">
 					{STEPS.map(step => (
 						<div key={step.num} className="flex gap-4">
-							<span className="mt-0.5 shrink-0 text-2xl font-extrabold" style={{ color: TEAL }}>
+							<span className="mt-0.5 shrink-0 text-2xl font-extrabold text-primary">
 								{step.num}
 							</span>
 							<div>
@@ -109,9 +104,7 @@ export default function PredictionVotePage() {
 							className="flex size-10 items-center justify-center rounded-xl"
 							style={{ backgroundColor: "rgba(20,184,166,0.1)" }}
 						>
-							<span className="text-lg" style={{ color: TEAL }}>
-								🏆
-							</span>
+							<span className="text-lg text-primary">🏆</span>
 						</div>
 						<div>
 							<p className="text-sm font-bold text-[#0f172a]">Reward Tiers</p>
@@ -131,7 +124,9 @@ export default function PredictionVotePage() {
 									border: i === 0 ? `1px solid rgba(20,184,166,0.2)` : "1px solid #f1f5f9",
 								}}
 							>
-								<span className="text-sm font-bold" style={{ color: i === 0 ? TEAL : "#64748b" }}>
+								<span
+									className={`text-sm font-bold ${i === 0 ? "text-primary" : "text-[#64748b]"}`}
+								>
 									{tier.match}
 								</span>
 								<span className="text-sm font-bold text-[#0f172a]">{tier.reward}</span>
@@ -148,7 +143,7 @@ export default function PredictionVotePage() {
 					onClick={() => router.push("/vote/prediction/notify")}
 					className="flex h-14 w-full items-center justify-center gap-2.5 rounded-full text-sm font-extrabold uppercase tracking-wider text-white transition active:scale-[0.98]"
 					style={{
-						background: "linear-gradient(135deg, #14b8a6 0%, #0d9488 50%, #0f766e 100%)",
+						background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 					}}
 				>
 					<Bell className="size-4" />
