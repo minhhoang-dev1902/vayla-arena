@@ -1,26 +1,20 @@
 "use client";
 
 import useEmblaCarousel from "embla-carousel-react";
-import { Music2, Trophy } from "lucide-react";
+import { Calendar, Music2, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getDiscoveryHotApi } from "@/apis/discovery.api";
 import { useAppQuery } from "@/hooks/use-app-query";
 import { createQueryKey } from "@/lib/query-key";
+import { MOCK_CHALLENGES } from "./_lib/challenges";
 import {
 	type DiscoveryTrack,
 	formatDiscoveryVotes,
 	MOCK_DISCOVERY_TRACKS,
 	youtubeThumb,
 } from "./_lib/tracks";
-
-const CHALLENGE = {
-	title: "Neon Nightbeat",
-	desc: "Create a synth-driven 16-bar loop that evokes a late-night city cruise...",
-	prize: "500 VAYLA",
-	endsIn: "2d 5h",
-};
 
 type TabId = "trending" | "new" | "ending";
 const TABS: { id: TabId; label: string }[] = [
@@ -169,39 +163,63 @@ export default function DiscoveryPage() {
 				</Link>
 			</section>
 
-			{/* Challenge Card */}
-			<section className="mt-5 px-4">
-				<div className="overflow-hidden rounded-2xl border border-[#c8e6e0] bg-[#e0f3ef] p-4">
-					<div className="flex gap-3">
-						<div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-[#0c2520] to-[#1a4a3a]">
-							<Music2 className="size-6 text-[#3ee8d8]" />
-						</div>
-						<div className="min-w-0 flex-1">
-							<div className="flex items-center gap-2">
-								<p className="text-sm font-bold text-[#0f172a]">{CHALLENGE.title}</p>
-								<span className="rounded-full bg-primary px-2.5 py-0.5 text-[9px] font-bold text-white">
-									Active
-								</span>
-							</div>
-							<p className="mt-1.5 text-xs leading-relaxed text-[#5a7a72]">{CHALLENGE.desc}</p>
-							<div className="mt-2 inline-flex w-fit max-w-full items-center gap-2 rounded-full border border-white bg-white/70 px-4 py-1.5 shadow-sm">
-								<Trophy className="size-3.5 shrink-0 text-[#064e3b]" strokeWidth={2.5} />
-								<span className="text-[10px] font-bold tracking-wide text-[#064e3b] uppercase">
-									Prize: {CHALLENGE.prize}
-								</span>
-							</div>
-						</div>
-					</div>
-
-					<div className="mt-8 flex items-center justify-between">
-						<span className="text-xs font-bold text-[#0f172a]">Ends in {CHALLENGE.endsIn}</span>
-						<button
-							type="button"
-							className="rounded-full bg-primary px-5 py-2 text-xs font-bold text-white shadow-sm"
+			{/* Challenges Slider */}
+			<section className="mt-5">
+				<div className="flex items-center justify-between px-4 mb-3">
+					<h2 className="text-base font-bold text-[#0f172a]">Active Challenges</h2>
+					<span className="text-xs font-semibold text-primary">
+						{MOCK_CHALLENGES.filter(c => c.isActive).length} active
+					</span>
+				</div>
+				<div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
+					{MOCK_CHALLENGES.map(challenge => (
+						<Link
+							key={challenge.id}
+							href={`/discovery/challenge/${challenge.id}`}
+							className="flex w-[280px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[#e2eeec] bg-white shadow-sm"
 						>
-							Explore Challenge
-						</button>
-					</div>
+							<div className="relative h-[140px] w-full">
+								<Image
+									fill
+									sizes="280px"
+									alt={challenge.title}
+									className="object-cover"
+									src={challenge.coverImage}
+								/>
+								<div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+								{challenge.isActive && (
+									<span className="absolute top-3 left-3 rounded-full bg-primary px-2.5 py-0.5 text-[9px] font-bold uppercase text-white">
+										Active
+									</span>
+								)}
+								<span className="absolute top-3 right-3 rounded-full bg-black/50 px-2.5 py-0.5 text-[9px] font-semibold text-white backdrop-blur-sm">
+									Ends in {challenge.endsIn}
+								</span>
+							</div>
+							<div className="flex flex-1 flex-col p-3.5">
+								<p className="text-sm font-bold leading-snug text-[#0f172a]">{challenge.title}</p>
+								<p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#64748b]">
+									{challenge.description}
+								</p>
+								<div className="mt-3 flex items-center gap-4 border-t border-[#f1f5f9] pt-2.5">
+									<div className="flex items-center gap-1.5 text-[10px] text-[#64748b]">
+										<Music2 className="size-3.5 text-primary" />
+										<span className="font-bold text-[#0f172a]">{challenge.reward}</span>
+									</div>
+									<div className="flex items-center gap-1.5 text-[10px] text-[#64748b]">
+										<Users className="size-3.5 text-primary" />
+										<span className="font-bold text-[#0f172a]">{challenge.submissions}</span>
+									</div>
+									<div className="flex items-center gap-1.5 text-[10px] text-[#64748b]">
+										<Calendar className="size-3.5 text-primary" />
+										<span className="font-bold text-[#0f172a]">
+											{challenge.period.split(" - ")[0]}
+										</span>
+									</div>
+								</div>
+							</div>
+						</Link>
+					))}
 				</div>
 			</section>
 
