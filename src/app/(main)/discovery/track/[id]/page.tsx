@@ -29,20 +29,20 @@ export default function DiscoveryTrackDetailPage() {
 
 	const [showEmbed, setShowEmbed] = useState(false);
 
-	const { data: apiTracks, isLoading } = useAppQuery<DiscoveryTrack[]>({
+	const { isLoading, data: apiTracks } = useAppQuery<DiscoveryTrack[]>({
 		queryKey: createQueryKey("/discovery/hot", { limit: 20, offset: 0 }),
 		queryFn: async () => {
 			const response = await getDiscoveryHotApi({ limit: 20, offset: 0 });
 			const tracks = Array.isArray(response) ? response : (response?.tracks ?? []);
 			if (tracks.length === 0) return MOCK_DISCOVERY_TRACKS;
 			return tracks.map((t, i) => ({
-				id: t.submissionId || String(i),
 				rank: t.rank,
 				title: t.trackTitle,
 				artist: t.artistName,
-				challenge: t.eventName || "Discovery",
-				votes: Number(t.voteCount ?? 0),
 				youtubeUrl: t.youtubeUrl,
+				id: t.submissionId || String(i),
+				votes: Number(t.voteCount ?? 0),
+				challenge: t.eventName || "Discovery",
 			}));
 		},
 	});
@@ -83,8 +83,8 @@ export default function DiscoveryTrackDetailPage() {
 			<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-[#e8f0f6] bg-[#f5f7fa]/95 px-4 py-3 backdrop-blur">
 				<Link
 					href="/discovery"
-					className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-white"
 					aria-label="Back"
+					className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-white"
 				>
 					<ArrowLeft className="size-5" />
 				</Link>
@@ -97,12 +97,12 @@ export default function DiscoveryTrackDetailPage() {
 					<div className="relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-2xl bg-slate-200">
 						{thumb ? (
 							<Image
+								fill
+								priority
 								src={thumb}
 								alt={track.title}
-								fill
 								className="object-cover"
 								sizes="(max-width:768px) 100vw, 28rem"
-								priority
 							/>
 						) : (
 							<div className="flex size-full items-center justify-center text-slate-400">
@@ -127,11 +127,11 @@ export default function DiscoveryTrackDetailPage() {
 					<div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-[#cbd5e1]">
 						{showEmbed && embedSrc ? (
 							<iframe
-								src={`${embedSrc}${embedSrc.includes("?") ? "&" : "?"}autoplay=1`}
-								title={track.title}
-								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 								allowFullScreen
+								title={track.title}
 								className="size-full"
+								src={`${embedSrc}${embedSrc.includes("?") ? "&" : "?"}autoplay=1`}
+								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 							/>
 						) : (
 							<button
@@ -141,11 +141,11 @@ export default function DiscoveryTrackDetailPage() {
 							>
 								{thumb ? (
 									<Image
-										src={thumb}
-										alt=""
 										fill
-										className="object-cover opacity-90"
+										alt=""
+										src={thumb}
 										sizes="100vw"
+										className="object-cover opacity-90"
 									/>
 								) : null}
 								<span className="absolute inset-0 bg-black/25" />
@@ -200,9 +200,9 @@ export default function DiscoveryTrackDetailPage() {
 						<p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]">
 							Platform Balance
 						</p>
-						<p className="mt-2 flex items-baseline gap-1.5">
+						<p className="mt-2 flex items-baseline gap-1">
 							<span className="text-[32px] font-extrabold leading-none text-[#0f172a]">50</span>
-							<span className="text-sm font-semibold text-vayla-forest">Vayla</span>
+							<span className="text-xs  text-[black]">Vayla</span>
 						</p>
 						<button
 							type="button"
@@ -215,9 +215,9 @@ export default function DiscoveryTrackDetailPage() {
 						<p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]">
 							Withdrawable
 						</p>
-						<p className="mt-2 flex items-end gap-1.5">
+						<p className="mt-2 flex items-end gap-1">
 							<span className="text-[32px] font-extrabold leading-none text-[#0f172a]">0</span>
-							<span className="text-sm font-semibold text-vayla-forest">Vayla</span>
+							<span className="text-xs  text-[black]">Vayla</span>
 						</p>
 						<button
 							type="button"

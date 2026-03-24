@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, ArrowLeft, CheckCircle2, RefreshCw, Shield } from "lucide-react";
+import { AlertCircle, ArrowLeft, RefreshCw, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 type OverlayState = "idle" | "confirming" | "success" | "failed";
+const UPLOAD_SUBMISSION_STORAGE_KEY = "discovery:uploadSubmission";
 
 const CHALLENGES = [
 	{ id: "summer", label: "Summer Discovery" },
@@ -22,9 +23,10 @@ const UPLOAD_COST = 10;
 const PLATFORM_BALANCE = 50;
 
 const uploadSchema = z.object({
+	description: z.string().max(500).optional(),
+	challenge: z.string().min(1, "Please select a challenge"),
 	trackTitle: z.string().min(1, "Track title is required").max(100),
 	artistName: z.string().min(1, "Artist name is required").max(100),
-	challenge: z.string().min(1, "Please select a challenge"),
 	youtubeUrl: z
 		.string()
 		.min(1, "YouTube URL is required")
@@ -36,7 +38,6 @@ const uploadSchema = z.object({
 				),
 			"Must be a valid YouTube URL",
 		),
-	description: z.string().max(500).optional(),
 });
 
 type UploadFormValues = z.infer<typeof uploadSchema>;
@@ -81,8 +82,8 @@ function ConfirmingOverlay() {
 					<div
 						className="h-full rounded-full"
 						style={{
-							background: "linear-gradient(90deg, var(--primary), #0d9488)",
 							animation: "upload-progress 2s ease-in-out infinite",
+							background: "linear-gradient(90deg, var(--primary), #0d9488)",
 						}}
 					/>
 				</div>
@@ -97,39 +98,6 @@ function ConfirmingOverlay() {
 					50% { width: 75%; opacity: 1; }
 				}
 			`}</style>
-		</div>
-	);
-}
-
-/* ── Success overlay ── */
-function SuccessOverlay({ onClose }: { onClose: () => void }) {
-	return (
-		<div className="fixed inset-0 z-[200] flex flex-col items-center bg-gradient-to-b from-[#e8faf8] via-[#f0fdfa] to-white px-6 pt-20 pb-8">
-			<div className="flex flex-col items-center">
-				<div className="flex size-16 items-center justify-center rounded-full bg-[#ccfbf1] shadow-md shadow-primary/10">
-					<CheckCircle2 className="size-9 text-primary" />
-				</div>
-				<h1 className="mt-8 text-center text-[26px] leading-tight font-extrabold text-[#184f4d]">
-					Upload Submitted
-					<br />
-					Successfully 🎉
-				</h1>
-				<p className="mt-4 text-center text-sm text-[#0d9893]">
-					Your track has been recorded on-chain.
-				</p>
-			</div>
-			<div className="mt-auto w-full max-w-sm pt-8">
-				<button
-					type="button"
-					onClick={onClose}
-					className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
-					style={{
-						background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
-					}}
-				>
-					Back to Discovery
-				</button>
-			</div>
 		</div>
 	);
 }
@@ -163,10 +131,10 @@ function FailedOverlay({ onRetry, onClose }: { onRetry: () => void; onClose: () 
 					<button
 						type="button"
 						onClick={onRetry}
-						className="flex h-12 items-center justify-center gap-2 rounded-full text-sm font-extrabold text-white transition active:scale-[0.98]"
 						style={{
 							background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 						}}
+						className="flex h-12 items-center justify-center gap-2 rounded-full text-sm font-extrabold text-white transition active:scale-[0.98]"
 					>
 						<RefreshCw className="size-4" />
 						Try Again
@@ -186,18 +154,18 @@ export default function DiscoveryUploadPage() {
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 	const {
+		watch,
 		register,
 		handleSubmit,
-		watch,
 		formState: { errors, isSubmitting },
 	} = useForm<UploadFormValues>({
 		resolver: zodResolver(uploadSchema),
 		defaultValues: {
 			trackTitle: "",
 			artistName: "",
-			challenge: CHALLENGES[0].id,
 			youtubeUrl: "",
 			description: "",
+			challenge: CHALLENGES[0].id,
 		},
 	});
 
@@ -218,15 +186,46 @@ export default function DiscoveryUploadPage() {
 		setOverlayState("confirming");
 		timerRef.current = setTimeout(() => {
 			const success = Math.random() > 0.2;
-			setOverlayState(success ? "success" : "failed");
+			if (success) {
+				router.push("/discovery/upload/submitted");
+				return;
+			}
+			setOverlayState("failed");
 		}, 3000);
-	}, []);
+	}, [router]);
 
 	const handleRetry = useCallback(() => {
 		submitUpload();
 	}, [submitUpload]);
 
-	const onSubmit = () => {
+	const onSubmit = (values: UploadFormValues) => {
+		const selectedChallengeName =
+			CHALLENGES.find(challenge => challenge.id === selectedChallenge)?.label ??
+			CHALLENGES[0].label;
+		try {
+			const submittedAt = new Date();
+			const timeFormatOptions: Intl.DateTimeFormatOptions = {};
+			timeFormatOptions.month = "short";
+			timeFormatOptions.day = "2-digit";
+			timeFormatOptions.hour = "2-digit";
+			timeFormatOptions.minute = "2-digit";
+			timeFormatOptions.hour12 = true;
+			const timeLabel = submittedAt.toLocaleString("en-US", timeFormatOptions);
+			const txHashPreview = `0x${Date.now().toString(16).slice(-3)}...${Date.now()
+				.toString(16)
+				.slice(-4)}`;
+			const submissionPayload: Record<string, unknown> = {};
+			submissionPayload.trackTitle = values.trackTitle;
+			submissionPayload.challengeName = selectedChallengeName;
+			submissionPayload.submissionTime = timeLabel;
+			submissionPayload.txHashPreview = txHashPreview;
+			submissionPayload.thumbnail = youtubeThumbFromUrl(values.youtubeUrl);
+
+			sessionStorage.setItem(UPLOAD_SUBMISSION_STORAGE_KEY, JSON.stringify(submissionPayload));
+		} catch {
+			// ignore storage failure
+		}
+
 		submitUpload();
 	};
 
@@ -237,8 +236,8 @@ export default function DiscoveryUploadPage() {
 				<div className="flex items-center gap-3 border-b border-[#f1f5f9] px-4 py-3.5">
 					<Link
 						href="/discovery"
-						className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-slate-100"
 						aria-label="Back"
+						className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-slate-100"
 					>
 						<ArrowLeft className="size-5" />
 					</Link>
@@ -248,7 +247,7 @@ export default function DiscoveryUploadPage() {
 					</div>
 				</div>
 
-				<form onSubmit={handleSubmit(onSubmit)} className="px-4 py-5 space-y-5">
+				<form className="px-4 py-5 space-y-5" onSubmit={handleSubmit(onSubmit)}>
 					{/* Track title */}
 					<div className="space-y-1.5">
 						<label
@@ -261,7 +260,7 @@ export default function DiscoveryUploadPage() {
 							id="trackTitle"
 							{...register("trackTitle")}
 							placeholder="Enter track title"
-							className="w-full rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+							className="w-full rounded-xl border border-[black]/40 px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
 						/>
 						{errors.trackTitle && (
 							<p className="text-xs text-red-500">{errors.trackTitle.message}</p>
@@ -280,7 +279,7 @@ export default function DiscoveryUploadPage() {
 							id="artistName"
 							{...register("artistName")}
 							placeholder="Artist or band name"
-							className="w-full rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+							className="w-full rounded-xl border border-[black]/40  px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
 						/>
 						{errors.artistName && (
 							<p className="text-xs text-red-500">{errors.artistName.message}</p>
@@ -336,21 +335,21 @@ export default function DiscoveryUploadPage() {
 							id="youtubeUrl"
 							{...register("youtubeUrl")}
 							placeholder="https://youtube.com/watch?v=..."
-							className="w-full rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+							className="w-full rounded-xl border border-[black]/40 px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
 						/>
 						{errors.youtubeUrl && (
 							<p className="text-xs text-red-500">{errors.youtubeUrl.message}</p>
 						)}
 						{/* Preview card */}
-						<div className="flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-3">
+						<div className="flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-3 mt-4">
 							<div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-primary/20">
 								{youtubePreviewUrl ? (
 									<Image
-										src={youtubePreviewUrl}
-										alt="preview"
 										fill
-										className="object-cover"
 										sizes="56px"
+										alt="preview"
+										src={youtubePreviewUrl}
+										className="object-cover"
 									/>
 								) : (
 									<div className="flex size-full items-center justify-center">
@@ -377,7 +376,7 @@ export default function DiscoveryUploadPage() {
 							{...register("description")}
 							rows={3}
 							placeholder="Add a short description of the track and its mood"
-							className="w-full resize-none rounded-xl border border-[#e2e8f0] px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+							className="w-full resize-none rounded-xl border border-[black]/40 px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
 						/>
 					</div>
 
@@ -388,17 +387,19 @@ export default function DiscoveryUploadPage() {
 					</p>
 
 					{/* Policy card */}
-					<div className="rounded-2xl border border-[#e8f0f6] bg-white p-4 shadow-sm">
+					<div className="rounded-2xl border border-[black]/20  bg-white p-4 shadow-sm">
 						<div className="flex items-center justify-between">
 							<p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
 								Policy
 							</p>
-							<Shield className="size-5 text-[#cbd5e1]" />
+							<div className="flex size-7 items-center justify-center rounded-full bg-[#f8fafb] border border-[black]/10">
+								<Shield className="size-4 text-[#cbd5e1]" />
+							</div>
 						</div>
 						<h3 className="mt-1 text-base font-extrabold text-[#0f172a]">Submission Rules</h3>
 
 						<div className="mt-3 grid grid-cols-2 gap-2">
-							<div className="rounded-xl border border-[#f1f5f9] bg-[#f8fafb] p-3">
+							<div className="rounded-xl border border-[black]/10 bg-[#f8fafb] p-3">
 								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
 									Daily Upload Limit
 								</p>
@@ -406,7 +407,7 @@ export default function DiscoveryUploadPage() {
 									{DAILY_LIMIT} tracks
 								</p>
 							</div>
-							<div className="rounded-xl border border-[#f1f5f9] bg-[#f8fafb] p-3">
+							<div className="rounded-xl border border-[black]/10 bg-[#f8fafb] p-3">
 								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
 									Upload Cost
 								</p>
@@ -416,7 +417,7 @@ export default function DiscoveryUploadPage() {
 							</div>
 						</div>
 
-						<div className="mt-2 flex items-center justify-between rounded-xl border border-[#f1f5f9] bg-[#f8fafb] p-3">
+						<div className="mt-2 flex items-center justify-between rounded-xl border border-[black]/10 bg-[#f8fafb] p-3">
 							<div>
 								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
 									Platform Balance
@@ -436,10 +437,10 @@ export default function DiscoveryUploadPage() {
 						<button
 							type="submit"
 							disabled={isSubmitting}
-							className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold text-white transition active:scale-[0.98] disabled:opacity-60"
 							style={{
 								background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 							}}
+							className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold text-white transition active:scale-[0.98] disabled:opacity-60"
 						>
 							Submit for Review
 						</button>
@@ -451,8 +452,6 @@ export default function DiscoveryUploadPage() {
 			</div>
 
 			{overlayState === "confirming" && <ConfirmingOverlay />}
-
-			{overlayState === "success" && <SuccessOverlay onClose={() => router.push("/discovery")} />}
 
 			{overlayState === "failed" && (
 				<FailedOverlay onRetry={handleRetry} onClose={() => setOverlayState("idle")} />

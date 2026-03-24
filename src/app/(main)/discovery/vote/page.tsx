@@ -25,7 +25,7 @@ export default function DiscoveryVotePage() {
 			const raw = sessionStorage.getItem(PRE_SELECT_KEY);
 			if (raw) {
 				sessionStorage.removeItem(PRE_SELECT_KEY);
-				const pre = JSON.parse(raw) as { id?: string; title?: string; rank?: number };
+				const pre = JSON.parse(raw) as { id?: string; rank?: number; title?: string };
 				selected =
 					MOCK_DISCOVERY_TRACKS.find(
 						t => t.id === pre.id || t.title === pre.title || t.rank === pre.rank,
@@ -49,11 +49,11 @@ export default function DiscoveryVotePage() {
 			sessionStorage.setItem(
 				STORAGE_KEY,
 				JSON.stringify({
-					submittedAt: new Date().toISOString(),
-					trackId: track.id,
 					track,
 					voteCount,
 					totalCost,
+					trackId: track.id,
+					submittedAt: new Date().toISOString(),
 				}),
 			);
 		} catch {
@@ -64,25 +64,25 @@ export default function DiscoveryVotePage() {
 
 	return (
 		<div className="flex min-h-dvh flex-col bg-[#f5f7fa] px-4 py-5">
-			<div className="rounded-3xl bg-white shadow-sm overflow-hidden">
+			<div className="rounded-3xl bg-white shadow-sm overflow-hidde px-3">
 				{/* Header */}
-				<div className="flex items-center justify-between px-5 pt-5 pb-4">
+				<div className="flex items-center justify-between pt-5 pb-4">
 					<h1 className="text-[17px] font-bold text-[#0f172a]">Confirm Vote</h1>
 					<Link
 						href="/discovery"
-						className="flex size-7 items-center justify-center rounded-full text-[#94a3b8] hover:text-[#64748b]"
 						aria-label="Close"
+						className="flex size-7 items-center justify-center rounded-full text-[#94a3b8] hover:text-[#64748b]"
 					>
 						<X className="size-5" />
 					</Link>
 				</div>
 
 				{/* Track card */}
-				<div className="mx-4 mb-4 overflow-hidden rounded-2xl border border-[#e8f0f6]">
+				<div className="overflow-hidden rounded-2xl border border-[#e8f0f6]">
 					<div className="flex items-center gap-3 px-3 py-3  bg-foreground">
 						<div className="relative size-20 shrink-0 overflow-hidden rounded-xl">
 							{thumb ? (
-								<Image src={thumb} alt={track.title} fill className="object-cover" sizes="" />
+								<Image fill sizes="" src={thumb} alt={track.title} className="object-cover" />
 							) : (
 								<div className="flex size-full items-center justify-center">
 									<Music2 className="size-6 text-slate-300" />
@@ -105,44 +105,44 @@ export default function DiscoveryVotePage() {
 				</div>
 
 				{/* Cost per vote */}
-				<div className="flex items-center justify-between border-t border-[#f1f5f9] px-5 py-3.5">
+				<div className="flex items-center justify-between  border-[#f1f5f9] px-5 my-2">
 					<span className="text-sm text-[#64748b]">Cost per vote</span>
 					<span className="text-sm font-bold text-[#0f172a]">{COST_PER_VOTE} VAYLA</span>
 				</div>
 
 				{/* Number of votes */}
-				<div className="border-t border-[#f1f5f9] px-5 py-3.5">
+				<div className="rounded-xl border border-[#eef2f7] bg-white px-3 py-2">
 					<div className="flex items-center justify-between">
-						<span className="text-sm text-[#64748b]">Number of votes</span>
-						<span className="rounded-full bg-[#fff3e0] px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#f59e0b]">
+						<span className="text-[14px] font-bold text-[#0f4b46]">Number of votes</span>
+						<span className="rounded-lg bg-[#fff5e6] px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-[#d28a00]">
 							MAX {MAX_VOTES}
 						</span>
 					</div>
-					<div className="mt-3 flex items-center gap-4">
-						<div className="flex items-center gap-2.5">
+					<div className="mt-2 flex items-center gap-2">
+						<div className="flex items-center gap-2">
 							<button
 								type="button"
 								onClick={() => setVoteCount(v => Math.max(1, v - 1))}
-								className="flex size-9 items-center justify-center rounded-full border border-[#e2e8f0] transition active:scale-95"
+								className="flex size-8 items-center justify-center rounded-full bg-[#edf1f4] transition active:scale-95"
 							>
-								<Minus className="size-4 text-[#64748b]" />
+								<Minus className="size-4 text-[#0f4b46]" />
 							</button>
-							<span className="w-7 text-center text-[17px] font-bold text-[#0f172a]">
-								{voteCount}
-							</span>
+							<div className="flex   items-center justify-center rounded-full bg-[#edf1f4] px-6 p-2">
+								<span className="text-sm font-bold leading-none text-[#0f4b46]">{voteCount}</span>
+							</div>
 							<button
 								type="button"
 								onClick={() => setVoteCount(v => Math.min(MAX_VOTES, v + 1))}
-								className="flex size-9 items-center justify-center rounded-full border border-[#e2e8f0] transition active:scale-95"
+								className="flex size-8 items-center justify-center rounded-full bg-[#edf1f4] transition active:scale-95"
 							>
-								<Plus className="size-4 text-[#64748b]" />
+								<Plus className="size-4 text-[#0f4b46]" />
 							</button>
 						</div>
 						<div className="flex-1 text-right">
-							<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
+							<p className="text-[10px] font-bold uppercase leading-tight tracking-wider text-[#6f9f9c]">
 								Votes Selected
 							</p>
-							<p className="text-[22px] font-extrabold leading-none text-[#0f172a]">{voteCount}</p>
+							<p className="text-xl font-extrabold leading-none text-[#0f4b46] mt-2">{voteCount}</p>
 						</div>
 					</div>
 				</div>
@@ -190,12 +190,12 @@ export default function DiscoveryVotePage() {
 				<div className="border-t border-[#f1f5f9] px-4 pb-5 pt-4 flex flex-col gap-3">
 					<button
 						type="button"
-						onClick={handleConfirm}
 						disabled={!canConfirm}
-						className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold text-white transition active:scale-[0.98] disabled:opacity-50"
+						onClick={handleConfirm}
 						style={{
 							background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 						}}
+						className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold text-white transition active:scale-[0.98] disabled:opacity-50"
 					>
 						Confirm Vote
 					</button>

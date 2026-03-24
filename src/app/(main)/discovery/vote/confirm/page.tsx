@@ -9,11 +9,11 @@ const STORAGE_KEY = "discovery:voteSelection";
 type PageState = "confirm" | "submitting" | "success" | "failed";
 
 type StoredVote = {
-	submittedAt: string;
 	trackId: string;
-	track: { id: string; title: string; artist: string; votes: number };
 	voteCount: number;
 	totalCost: number;
+	submittedAt: string;
+	track: { id: string; title: string; votes: number; artist: string };
 };
 
 function generateFakeTxHash(): string {
@@ -61,8 +61,8 @@ function SubmittingOverlay() {
 						className="h-full rounded-full"
 						style={{
 							width: "65%",
-							background: "linear-gradient(90deg, var(--primary), #0d9488)",
 							animation: "progress-pulse 2s ease-in-out infinite",
+							background: "linear-gradient(90deg, var(--primary), #0d9488)",
 						}}
 					/>
 				</div>
@@ -107,9 +107,9 @@ function SuccessOverlay({ txHash, onClose }: { txHash: string; onClose: () => vo
 					<p className="mt-0.5 text-sm font-bold text-[#0f172a]">{shortenHash(txHash)}</p>
 				</div>
 				<a
-					href={`https://polygonscan.com/tx/${txHash}`}
 					target="_blank"
 					rel="noopener noreferrer"
+					href={`https://polygonscan.com/tx/${txHash}`}
 					className="flex items-center gap-1 text-xs font-bold text-primary"
 				>
 					View
@@ -120,10 +120,10 @@ function SuccessOverlay({ txHash, onClose }: { txHash: string; onClose: () => vo
 				<button
 					type="button"
 					onClick={onClose}
-					className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
 					style={{
 						background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 					}}
+					className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
 				>
 					Back to Discovery
 				</button>
@@ -164,10 +164,10 @@ function FailedOverlay({ onRetry, onClose }: { onRetry: () => void; onClose: () 
 				<button
 					type="button"
 					onClick={onRetry}
-					className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
 					style={{
 						background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 					}}
+					className="flex h-12 w-full items-center justify-center gap-2 rounded-full text-sm font-extrabold tracking-wider text-white transition active:scale-[0.98]"
 				>
 					<RefreshCw className="size-4" />
 					Try Again
@@ -283,10 +283,10 @@ export default function DiscoveryVoteConfirmPage() {
 					<button
 						type="button"
 						onClick={submitVote}
-						className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold uppercase tracking-wider text-white transition active:scale-[0.98]"
 						style={{
 							background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 						}}
+						className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold uppercase tracking-wider text-white transition active:scale-[0.98]"
 					>
 						Confirm
 					</button>
