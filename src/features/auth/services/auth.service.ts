@@ -23,7 +23,7 @@ export interface LoginResponse {
 export const loginService = (payload: LoginRequestPayload): Promise<LoginResponse> =>
 	apiService.post({
 		url: AUTH_ENDPOINTS.LOGIN,
-		payload: payload as Record<string, unknown>,
+		payload,
 	});
 
 // ─── Register ────────────────────────────────────────────────────────
@@ -56,7 +56,7 @@ export interface RegisterResponse {
 export const registerService = (payload: RegisterRequestPayload): Promise<RegisterResponse> =>
 	apiService.post({
 		url: AUTH_ENDPOINTS.REGISTER,
-		payload: payload as Record<string, unknown>,
+		payload,
 	});
 
 // ─── Privy → Vayla session ─────────────────────────────────────────────
@@ -93,5 +93,5 @@ export interface PrivyLoginResponse {
 export const privyLoginService = (payload: PrivyLoginPayload): Promise<PrivyLoginResponse> =>
 	apiService.post({
 		url: AUTH_ENDPOINTS.PRIVY_LOGIN,
-		payload: payload as Record<string, unknown>,
+		payload,
 	});

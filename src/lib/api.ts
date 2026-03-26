@@ -4,7 +4,7 @@ import { axiosInstance } from "./axios";
 interface RequestOptions {
 	url: string;
 	params?: Record<string, unknown>;
-	payload?: Record<string, unknown>;
+	payload?: unknown;
 	toResponse?: (data: unknown) => unknown;
 	toRequest?: (config: InternalAxiosRequestConfig) => InternalAxiosRequestConfig;
 }

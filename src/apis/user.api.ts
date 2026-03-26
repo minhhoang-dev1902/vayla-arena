@@ -42,12 +42,12 @@ export const getUserDetailApi = (id: string): Promise<User> =>
 	apiService.get({ url: `/users/${id}` });
 
 export const createUserApi = (payload: CreateUserPayload): Promise<User> =>
-	apiService.post({ url: "/users", payload: payload as Record<string, unknown> });
+	apiService.post({ url: "/users", payload });
 
 export const updateUserApi = (id: string, payload: UpdateUserPayload): Promise<User> =>
 	apiService.put({
 		url: `/users/${id}`,
-		payload: payload as Record<string, unknown>,
+		payload,
 	});
 
 export const deleteUserApi = (id: string): Promise<void> =>

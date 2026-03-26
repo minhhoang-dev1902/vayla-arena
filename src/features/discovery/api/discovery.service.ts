@@ -39,7 +39,7 @@ export const getDiscoveryFeedService = (
 export const submitTrackService = (payload: SubmitTrackPayload): Promise<SubmitTrackResponse> =>
 	apiService.post({
 		url: DISCOVERY_ENDPOINTS.SUBMISSIONS,
-		payload: payload as unknown as Record<string, unknown>,
+		payload,
 	});
 
 export const getMySubmissionsService = (

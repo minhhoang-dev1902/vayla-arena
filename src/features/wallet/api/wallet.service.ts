@@ -20,5 +20,5 @@ export const getDepositAddressService = (network: NetworkType): Promise<DepositA
 export const withdrawService = (payload: WithdrawPayload): Promise<WithdrawResponse> =>
 	apiService.post({
 		url: WALLET_ENDPOINTS.WITHDRAW,
-		payload: payload as unknown as Record<string, unknown>,
+		payload,
 	});

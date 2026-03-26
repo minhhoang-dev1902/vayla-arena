@@ -53,13 +53,13 @@ export const getProductDetailApi = (id: string): Promise<Product> =>
 export const createProductApi = (payload: CreateProductPayload): Promise<Product> =>
 	apiService.post({
 		url: "/products",
-		payload: payload as Record<string, unknown>,
+		payload,
 	});
 
 export const updateProductApi = (id: string, payload: UpdateProductPayload): Promise<Product> =>
 	apiService.put({
 		url: `/products/${id}`,
-		payload: payload as Record<string, unknown>,
+		payload,
 	});
 
 export const deleteProductApi = (id: string): Promise<void> =>

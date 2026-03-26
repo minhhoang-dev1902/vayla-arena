@@ -35,18 +35,18 @@ export interface RefreshTokenResponse {
 // ─── API Executors ──────────────────────────────────────────────────
 
 export const loginApi = (payload: LoginPayload): Promise<LoginResponse> =>
-	apiService.post({ url: "/auth/login", payload: payload as Record<string, unknown> });
+	apiService.post({ url: "/auth/login", payload });
 
 export const registerApi = (payload: RegisterPayload): Promise<LoginResponse> =>
 	apiService.post({
 		url: "/auth/register",
-		payload: payload as Record<string, unknown>,
+		payload,
 	});
 
 export const refreshTokenApi = (payload: RefreshTokenPayload): Promise<RefreshTokenResponse> =>
 	apiService.post({
 		url: "/auth/refresh",
-		payload: payload as Record<string, unknown>,
+		payload,
 	});
 
 export const logoutApi = (): Promise<void> => apiService.post({ url: "/auth/logout" });
