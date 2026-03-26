@@ -9,6 +9,7 @@ import type {
 	GetDiscoveryChallengesParams,
 	GetDiscoveryFeedParams,
 	GetDiscoveryHotParams,
+	MySubmissionsResponse,
 	SubmitTrackPayload,
 	SubmitTrackResponse,
 } from "../types/discovery.types";
@@ -39,6 +40,9 @@ export const submitTrackService = (payload: SubmitTrackPayload): Promise<SubmitT
 		url: DISCOVERY_ENDPOINTS.SUBMISSIONS,
 		payload: payload as unknown as Record<string, unknown>,
 	});
+
+export const getMySubmissionsService = (): Promise<MySubmissionsResponse> =>
+	apiService.get({ url: DISCOVERY_ENDPOINTS.MY_SUBMISSIONS });
 
 export const getDiscoveryChallengesService = (
 	params: GetDiscoveryChallengesParams = {},

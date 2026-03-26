@@ -27,7 +27,7 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen overflow-hidden bg-[black]`}
+				className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-[black]`}
 			>
 				<PrivyAuthProvider>
 					<QueryProvider>{children}</QueryProvider>

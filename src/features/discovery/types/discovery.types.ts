@@ -64,6 +64,28 @@ export interface GetDiscoveryFeedParams {
 
 export type DiscoveryFeedResponse = DiscoveryHotListResponse;
 
+// ─── My Submissions ─────────────────────────────────────────────
+
+export type SubmissionStatus = "approved" | "rejected" | "pending_review" | "closed";
+
+export interface MySubmissionItem {
+	genre: string;
+	eventId: string;
+	voteCount: number;
+	eventName: string;
+	status: SubmissionStatus;
+	createdAt: string;
+	trackTitle: string;
+	artistName: string;
+	youtubeUrl: string;
+	submissionId: string;
+}
+
+export interface MySubmissionsResponse {
+	total: number;
+	submissions: MySubmissionItem[];
+}
+
 // ─── Submissions ────────────────────────────────────────────────
 
 export interface SubmitTrackPayload {

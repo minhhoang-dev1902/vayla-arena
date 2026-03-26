@@ -5,28 +5,24 @@ import { AlertCircle, ArrowLeft, RefreshCw, Shield } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { useGetChallenges } from "@/features/discovery/hooks/use-get-challenges";
+import { useSubmitTrack } from "@/features/discovery/hooks/use-submit-track";
+import { useGetWalletBalance } from "@/features/wallet/hooks/use-get-wallet-balance";
 
-type OverlayState = "idle" | "confirming" | "success" | "failed";
+type OverlayState = "idle" | "confirming" | "failed";
 const UPLOAD_SUBMISSION_STORAGE_KEY = "discovery:uploadSubmission";
-
-const CHALLENGES = [
-	{ id: "summer", label: "Summer Discovery" },
-	{ id: "neon", label: "Neon Nights Remix" },
-	{ id: "beat", label: "Beat Battle" },
-] as const;
-
-const DAILY_LIMIT = 2;
 const UPLOAD_COST = 10;
-const PLATFORM_BALANCE = 50;
+
+const GENRES = ["Pop", "Hip-Hop", "R&B", "Electronic", "Rock", "Lo-fi", "Jazz", "Other"] as const;
 
 const uploadSchema = z.object({
 	description: z.string().max(500).optional(),
-	challenge: z.string().min(1, "Please select a challenge"),
-	trackTitle: z.string().min(1, "Track title is required").max(100),
+	genre: z.string().min(1, "Genre is required"),
 	artistName: z.string().min(1, "Artist name is required").max(100),
+	trackTitle: z.string().min(1, "Track title is required").max(100),
 	youtubeUrl: z
 		.string()
 		.min(1, "YouTube URL is required")
@@ -68,12 +64,12 @@ function ConfirmingOverlay() {
 					</div>
 				</div>
 				<p className="mt-9 text-[10px] font-semibold uppercase tracking-[0.35em] text-[#67bdb8]">
-					Wallet Gate
+					Submitting
 				</p>
 				<h1 className="mt-4 text-center text-[28px] leading-tight font-extrabold text-[#1a1f2a]">
-					Confirming
+					Submitting
 					<br />
-					on-chain…
+					your track…
 				</h1>
 			</div>
 			<div className="flex-1" />
@@ -89,7 +85,7 @@ function ConfirmingOverlay() {
 				</div>
 				<p className="mt-5 flex items-center justify-center gap-2 text-sm text-[#83919a]">
 					<span className="size-2 shrink-0 rounded-full bg-primary" />
-					Securing transaction
+					Sending to server
 				</p>
 			</div>
 			<style>{`
@@ -103,7 +99,15 @@ function ConfirmingOverlay() {
 }
 
 /* ── Failed overlay ── */
-function FailedOverlay({ onRetry, onClose }: { onRetry: () => void; onClose: () => void }) {
+function FailedOverlay({
+	message,
+	onClose,
+	onRetry,
+}: {
+	message?: string;
+	onClose: () => void;
+	onRetry: () => void;
+}) {
 	return (
 		<div className="fixed inset-0 z-[200] flex flex-col items-center bg-gradient-to-b from-[#fff1f1] via-[#fff8f8] to-white px-6 pt-16 pb-8">
 			<div className="flex flex-col items-center">
@@ -115,9 +119,11 @@ function FailedOverlay({ onRetry, onClose }: { onRetry: () => void; onClose: () 
 					</div>
 				</div>
 				<h1 className="mt-8 text-center text-[26px] leading-tight font-extrabold text-[#1b2436]">
-					Transaction Failed
+					Submission Failed
 				</h1>
-				<p className="mt-2 text-center text-base font-semibold text-primary">No VAYLA was used.</p>
+				<p className="mt-2 text-center text-sm text-[#64748b]">
+					{message ?? "Something went wrong. Please try again."}
+				</p>
 			</div>
 			<div className="mt-auto w-full max-w-sm pt-8">
 				<div className="grid grid-cols-2 gap-3">
@@ -149,85 +155,105 @@ function FailedOverlay({ onRetry, onClose }: { onRetry: () => void; onClose: () 
 export default function DiscoveryUploadPage() {
 	const router = useRouter();
 	const [overlayState, setOverlayState] = useState<OverlayState>("idle");
-	const [selectedChallenge, setSelectedChallenge] = useState<string>(CHALLENGES[0].id);
+	const [selectedEventId, setSelectedEventId] = useState<string>("");
 	const [youtubePreviewUrl, setYoutubePreviewUrl] = useState<string>("");
-	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const [errorMessage, setErrorMessage] = useState<string>("");
+	const lastValuesRef = useRef<UploadFormValues | null>(null);
+
+	const { data: apiChallenges, isLoading: challengesLoading } = useGetChallenges();
+	const { data: walletBalance } = useGetWalletBalance();
+	const { submit } = useSubmitTrack();
+
+	const challenges = useMemo(() => apiChallenges?.filter(c => c.isActive) ?? [], [apiChallenges]);
+
+	const platformBalance = walletBalance?.platformBalance
+		? parseFloat(walletBalance.platformBalance).toLocaleString()
+		: "—";
+
+	useEffect(() => {
+		if (challenges.length > 0 && !selectedEventId) {
+			setSelectedEventId(challenges[0].eventId ?? "");
+		}
+	}, [challenges, selectedEventId]);
 
 	const {
 		watch,
 		register,
 		handleSubmit,
-		formState: { errors, isSubmitting },
+		formState: { errors },
 	} = useForm<UploadFormValues>({
 		resolver: zodResolver(uploadSchema),
-		defaultValues: {
-			trackTitle: "",
-			artistName: "",
-			youtubeUrl: "",
-			description: "",
-			challenge: CHALLENGES[0].id,
-		},
+		defaultValues: { genre: "", trackTitle: "", artistName: "", youtubeUrl: "", description: "" },
 	});
 
 	const youtubeUrlValue = watch("youtubeUrl");
 
 	useEffect(() => {
-		const thumb = youtubeThumbFromUrl(youtubeUrlValue ?? "");
-		setYoutubePreviewUrl(thumb ?? "");
+		setYoutubePreviewUrl(youtubeThumbFromUrl(youtubeUrlValue ?? "") ?? "");
 	}, [youtubeUrlValue]);
 
-	useEffect(() => {
-		return () => {
-			if (timerRef.current) clearTimeout(timerRef.current);
-		};
-	}, []);
+	const doSubmit = useCallback(
+		async (values: UploadFormValues) => {
+			setOverlayState("confirming");
+			try {
+				const result = await submit({
+					genre: values.genre,
+					eventId: selectedEventId,
+					youtubeUrl: values.youtubeUrl,
+					trackTitle: values.trackTitle,
+					artistName: values.artistName,
+					description: values.description,
+				});
 
-	const submitUpload = useCallback(() => {
-		setOverlayState("confirming");
-		timerRef.current = setTimeout(() => {
-			const success = Math.random() > 0.2;
-			if (success) {
-				router.push("/discovery/upload/submitted");
-				return;
+				const submittedAt = new Date();
+				const timeLabel = submittedAt.toLocaleString("en-US", {
+					hour12: true,
+					day: "2-digit",
+					month: "short",
+					hour: "2-digit",
+					minute: "2-digit",
+				});
+
+				try {
+					sessionStorage.setItem(
+						UPLOAD_SUBMISSION_STORAGE_KEY,
+						JSON.stringify({
+							submissionTime: timeLabel,
+							trackTitle: result.trackTitle,
+							thumbnail: youtubeThumbFromUrl(values.youtubeUrl),
+							txHashPreview: `0x${result.submissionId.slice(0, 4)}...${result.submissionId.slice(-4)}`,
+							challengeName:
+								challenges.find(c => c.eventId === selectedEventId)?.title ?? "Discovery",
+						}),
+					);
+				} catch {
+					// ignore storage failure
+				}
+
+				router.push("/discovery/my-submissions");
+			} catch (err: unknown) {
+				const msg =
+					err &&
+					typeof err === "object" &&
+					"message" in err &&
+					typeof (err as { message: unknown }).message === "string"
+						? (err as { message: string }).message
+						: undefined;
+				setErrorMessage(msg ?? "");
+				setOverlayState("failed");
 			}
-			setOverlayState("failed");
-		}, 3000);
-	}, [router]);
-
-	const handleRetry = useCallback(() => {
-		submitUpload();
-	}, [submitUpload]);
+		},
+		[submit, selectedEventId, challenges, router],
+	);
 
 	const onSubmit = (values: UploadFormValues) => {
-		const selectedChallengeName =
-			CHALLENGES.find(challenge => challenge.id === selectedChallenge)?.label ??
-			CHALLENGES[0].label;
-		try {
-			const submittedAt = new Date();
-			const timeFormatOptions: Intl.DateTimeFormatOptions = {};
-			timeFormatOptions.month = "short";
-			timeFormatOptions.day = "2-digit";
-			timeFormatOptions.hour = "2-digit";
-			timeFormatOptions.minute = "2-digit";
-			timeFormatOptions.hour12 = true;
-			const timeLabel = submittedAt.toLocaleString("en-US", timeFormatOptions);
-			const txHashPreview = `0x${Date.now().toString(16).slice(-3)}...${Date.now()
-				.toString(16)
-				.slice(-4)}`;
-			const submissionPayload: Record<string, unknown> = {};
-			submissionPayload.trackTitle = values.trackTitle;
-			submissionPayload.challengeName = selectedChallengeName;
-			submissionPayload.submissionTime = timeLabel;
-			submissionPayload.txHashPreview = txHashPreview;
-			submissionPayload.thumbnail = youtubeThumbFromUrl(values.youtubeUrl);
-
-			sessionStorage.setItem(UPLOAD_SUBMISSION_STORAGE_KEY, JSON.stringify(submissionPayload));
-		} catch {
-			// ignore storage failure
-		}
-
-		submitUpload();
+		lastValuesRef.current = values;
+		doSubmit(values);
 	};
+
+	const handleRetry = useCallback(() => {
+		if (lastValuesRef.current) doSubmit(lastValuesRef.current);
+	}, [doSubmit]);
 
 	return (
 		<>
@@ -247,14 +273,14 @@ export default function DiscoveryUploadPage() {
 					</div>
 				</div>
 
-				<form className="px-4 py-5 space-y-5" onSubmit={handleSubmit(onSubmit)}>
+				<form className="space-y-5 px-4 py-5" onSubmit={handleSubmit(onSubmit)}>
 					{/* Track title */}
 					<div className="space-y-1.5">
 						<label
 							htmlFor="trackTitle"
 							className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]"
 						>
-							Track
+							Track Title
 						</label>
 						<input
 							id="trackTitle"
@@ -279,48 +305,81 @@ export default function DiscoveryUploadPage() {
 							id="artistName"
 							{...register("artistName")}
 							placeholder="Artist or band name"
-							className="w-full rounded-xl border border-[black]/40  px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+							className="w-full rounded-xl border border-[black]/40 px-4 py-3 text-sm text-[#0f172a] placeholder:text-[#cbd5e1] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
 						/>
 						{errors.artistName && (
 							<p className="text-xs text-red-500">{errors.artistName.message}</p>
 						)}
 					</div>
 
+					{/* Genre */}
+					<div className="space-y-1.5">
+						<label
+							htmlFor="genre"
+							className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]"
+						>
+							Genre
+						</label>
+						<select
+							id="genre"
+							{...register("genre")}
+							className="w-full rounded-xl border border-[black]/40 px-4 py-3 text-sm text-[#0f172a] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
+						>
+							<option value="">Select a genre</option>
+							{GENRES.map(g => (
+								<option key={g} value={g}>
+									{g}
+								</option>
+							))}
+						</select>
+						{errors.genre && <p className="text-xs text-red-500">{errors.genre.message}</p>}
+					</div>
+
 					{/* Challenge selection */}
 					<div className="space-y-2">
 						<p className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]">
-							Challenge Selection
+							Challenge
 						</p>
-						<div className="flex gap-2">
-							{CHALLENGES.map(c => {
-								const isSelected = selectedChallenge === c.id;
-								return (
-									<button
-										key={c.id}
-										type="button"
-										onClick={() => setSelectedChallenge(c.id)}
-										className={`flex flex-1 flex-col items-center gap-2 rounded-xl border px-2 py-3 transition ${
-											isSelected ? "border-primary bg-white" : "border-[#e2e8f0] bg-white"
-										}`}
-									>
-										<span
-											className={`flex size-4 items-center justify-center rounded-full border-2 ${
-												isSelected ? "border-primary bg-primary" : "border-[#cbd5e1] bg-white"
+						{challengesLoading ? (
+							<div className="flex gap-2">
+								{[1, 2, 3].map(i => (
+									<div key={i} className="h-16 flex-1 animate-pulse rounded-xl bg-slate-100" />
+								))}
+							</div>
+						) : challenges.length === 0 ? (
+							<p className="text-sm text-[#94a3b8]">No active challenges at the moment.</p>
+						) : (
+							<div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+								{challenges.map(c => {
+									const isSelected = selectedEventId === c.eventId;
+									return (
+										<button
+											type="button"
+											key={c.eventId}
+											onClick={() => setSelectedEventId(c.eventId ?? "")}
+											className={`flex w-[120px] shrink-0 flex-col items-center gap-2 rounded-xl border px-2 py-3 transition ${
+												isSelected ? "border-primary bg-white" : "border-[#e2e8f0] bg-white"
 											}`}
 										>
-											{isSelected && <span className="size-1.5 rounded-full bg-white" />}
-										</span>
-										<span
-											className={`text-center text-[11px] font-semibold leading-tight ${
-												isSelected ? "text-[#0f172a]" : "text-[#94a3b8]"
-											}`}
-										>
-											{c.label}
-										</span>
-									</button>
-								);
-							})}
-						</div>
+											<span
+												className={`flex size-4 items-center justify-center rounded-full border-2 ${
+													isSelected ? "border-primary bg-primary" : "border-[#cbd5e1] bg-white"
+												}`}
+											>
+												{isSelected && <span className="size-1.5 rounded-full bg-white" />}
+											</span>
+											<span
+												className={`line-clamp-2 text-center text-[11px] font-semibold leading-tight ${
+													isSelected ? "text-[#0f172a]" : "text-[#94a3b8]"
+												}`}
+											>
+												{c.title}
+											</span>
+										</button>
+									);
+								})}
+							</div>
+						)}
 					</div>
 
 					{/* YouTube URL */}
@@ -329,7 +388,7 @@ export default function DiscoveryUploadPage() {
 							htmlFor="youtubeUrl"
 							className="block text-[10px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]"
 						>
-							YouTube Embed Link
+							YouTube Link
 						</label>
 						<input
 							id="youtubeUrl"
@@ -340,8 +399,7 @@ export default function DiscoveryUploadPage() {
 						{errors.youtubeUrl && (
 							<p className="text-xs text-red-500">{errors.youtubeUrl.message}</p>
 						)}
-						{/* Preview card */}
-						<div className="flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-3 mt-4">
+						<div className="mt-4 flex items-center gap-3 rounded-xl bg-primary/10 px-3 py-3">
 							<div className="relative size-14 shrink-0 overflow-hidden rounded-lg bg-primary/20">
 								{youtubePreviewUrl ? (
 									<Image
@@ -358,7 +416,7 @@ export default function DiscoveryUploadPage() {
 								)}
 							</div>
 							<p className="text-xs leading-relaxed text-[#47817a]">
-								Paste a public YouTube embed link to preview your track here.
+								Paste a public YouTube link to preview your track here.
 							</p>
 						</div>
 					</div>
@@ -387,26 +445,17 @@ export default function DiscoveryUploadPage() {
 					</p>
 
 					{/* Policy card */}
-					<div className="rounded-2xl border border-[black]/20  bg-white p-4 shadow-sm">
+					<div className="rounded-2xl border border-[black]/20 bg-white p-4 shadow-sm">
 						<div className="flex items-center justify-between">
 							<p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#94a3b8]">
 								Policy
 							</p>
-							<div className="flex size-7 items-center justify-center rounded-full bg-[#f8fafb] border border-[black]/10">
+							<div className="flex size-7 items-center justify-center rounded-full border border-[black]/10 bg-[#f8fafb]">
 								<Shield className="size-4 text-[#cbd5e1]" />
 							</div>
 						</div>
 						<h3 className="mt-1 text-base font-extrabold text-[#0f172a]">Submission Rules</h3>
-
 						<div className="mt-3 grid grid-cols-2 gap-2">
-							<div className="rounded-xl border border-[black]/10 bg-[#f8fafb] p-3">
-								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
-									Daily Upload Limit
-								</p>
-								<p className="mt-1 text-[15px] font-extrabold text-[#0f172a]">
-									{DAILY_LIMIT} tracks
-								</p>
-							</div>
 							<div className="rounded-xl border border-[black]/10 bg-[#f8fafb] p-3">
 								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
 									Upload Cost
@@ -415,19 +464,13 @@ export default function DiscoveryUploadPage() {
 									{UPLOAD_COST} VAYLA
 								</p>
 							</div>
-						</div>
-
-						<div className="mt-2 flex items-center justify-between rounded-xl border border-[black]/10 bg-[#f8fafb] p-3">
-							<div>
+							<div className="rounded-xl border border-[black]/10 bg-[#f8fafb] p-3">
 								<p className="text-[9px] font-bold uppercase tracking-wider text-[#94a3b8]">
 									Platform Balance
 								</p>
 								<p className="mt-1 text-[15px] font-extrabold text-[#0f172a]">
-									{PLATFORM_BALANCE} VAYLA
+									{platformBalance} VAYLA
 								</p>
-							</div>
-							<div className="flex size-9 items-center justify-center rounded-full bg-primary">
-								<span className="text-sm font-extrabold text-white">V</span>
 							</div>
 						</div>
 					</div>
@@ -436,7 +479,7 @@ export default function DiscoveryUploadPage() {
 					<div className="pb-6">
 						<button
 							type="submit"
-							disabled={isSubmitting}
+							disabled={overlayState === "confirming" || !selectedEventId}
 							style={{
 								background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 							}}
@@ -454,7 +497,11 @@ export default function DiscoveryUploadPage() {
 			{overlayState === "confirming" && <ConfirmingOverlay />}
 
 			{overlayState === "failed" && (
-				<FailedOverlay onRetry={handleRetry} onClose={() => setOverlayState("idle")} />
+				<FailedOverlay
+					onRetry={handleRetry}
+					message={errorMessage}
+					onClose={() => setOverlayState("idle")}
+				/>
 			)}
 		</>
 	);

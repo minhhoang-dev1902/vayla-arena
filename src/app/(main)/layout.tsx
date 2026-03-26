@@ -6,7 +6,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 	return (
 		<ViewAreaProvider
 			style={{ maxWidth: LAYOUT_MAX_WIDTH_PX }}
-			className="relative mx-auto min-h-screen w-full overflow-hidden bg-[white]"
+			className="relative mx-auto min-h-screen w-full bg-[white]"
 		>
 			<AuthGuard>{children}</AuthGuard>
 		</ViewAreaProvider>

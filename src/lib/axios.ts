@@ -11,7 +11,7 @@ declare module "axios" {
 function getToken(): string | null {
 	if (typeof window === "undefined") return null;
 	// return localStorage.getItem("access_token") ?? localStorage.getItem("privy:token");
-	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkMjE2OTAwLTZlMmItNDgyMi1hYmM1LWRiZWE4NjU2MGMzNiIsImVtYWlsIjoiYWRtaW5AdmF5bGEuaW8iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzQ1MDY0MTAsImV4cCI6MTc3NDUwNzMxMH0.Ku6qhDuw4eIgLqKrequ7UcAq8yA_t476QEMJ9FL2BPc";
+	return "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkMjE2OTAwLTZlMmItNDgyMi1hYmM1LWRiZWE4NjU2MGMzNiIsImVtYWlsIjoiYWRtaW5AdmF5bGEuaW8iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzQ1MTU1NTAsImV4cCI6MTc3NDUxNjQ1MH0.I6DZAPOG_sX-QdPCPKy1u5SLEL909aGoMmLqNFMilMk";
 }
 
 const axiosInstance = axios.create({
