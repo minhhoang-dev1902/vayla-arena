@@ -43,8 +43,8 @@ export function AppSidebar({ triggerClassName }: AppSidebarProps) {
 	const { walletAddress, linkedWallets, setActiveWalletAddress } = useAuth();
 	const { data: balance } = useGetWalletBalance();
 
-	const withdrawable = balance?.withdrawableBalance
-		? parseFloat(balance.withdrawableBalance).toLocaleString()
+	const displayBalance = balance?.platformBalance
+		? parseFloat(balance.platformBalance).toLocaleString()
 		: "—";
 
 	return (
@@ -80,11 +80,9 @@ export function AppSidebar({ triggerClassName }: AppSidebarProps) {
 					</div>
 
 					<div className="mx-4 mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-						<p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
-							Withdrawable Balance
-						</p>
+						<p className="text-[10px] font-bold uppercase tracking-widest text-white/50">Balance</p>
 						<p className="mt-1 text-xl font-extrabold text-white">
-							{withdrawable} <span className="text-sm font-semibold text-primary">VAYLA</span>
+							{displayBalance} <span className="text-sm font-semibold text-primary">VAYLA</span>
 						</p>
 					</div>
 

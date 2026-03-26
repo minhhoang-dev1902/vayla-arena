@@ -17,15 +17,21 @@ function normalizeMySubmissionsList(raw: unknown): MySubmissionItem[] {
 	return [];
 }
 
+function omitUndefined<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+	return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
+}
+
 export function useGetMySubmissions(
 	params: GetMySubmissionsParams = DEFAULT_MY_SUBMISSIONS_PARAMS,
 ) {
 	const merged = { ...DEFAULT_MY_SUBMISSIONS_PARAMS, ...params };
+	const requestParams = omitUndefined(merged as Record<string, unknown>) as GetMySubmissionsParams;
+	const queryKeyPayload = omitUndefined(merged as Record<string, unknown>);
 
 	return useAppQuery<MySubmissionItem[]>({
-		queryKey: createQueryKey(DISCOVERY_ENDPOINTS.MY_SUBMISSIONS, merged as Record<string, unknown>),
+		queryKey: createQueryKey(DISCOVERY_ENDPOINTS.MY_SUBMISSIONS, queryKeyPayload),
 		queryFn: async () => {
-			const response = await getMySubmissionsService(merged);
+			const response = await getMySubmissionsService(requestParams);
 			if (Array.isArray(response)) return response as MySubmissionItem[];
 			return normalizeMySubmissionsList(response);
 		},

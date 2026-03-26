@@ -77,8 +77,8 @@ export default function AddVaylaPage() {
 	const { walletAddress } = useAuth();
 	const { data: balance } = useGetWalletBalance();
 
-	const withdrawable = balance?.withdrawableBalance
-		? parseFloat(balance.withdrawableBalance).toLocaleString()
+	const displayBalance = balance?.platformBalance
+		? parseFloat(balance.platformBalance).toLocaleString()
 		: "—";
 
 	const address = walletAddress ?? "";
@@ -112,7 +112,7 @@ export default function AddVaylaPage() {
 				{/* Balance card */}
 				<div className="rounded-2xl border border-[#e2e8f0] bg-white px-4 py-4 shadow-sm">
 					<div className="flex items-center justify-between">
-						<p className="text-[11px] font-semibold text-[#94a3b8]">Withdrawable Balance</p>
+						<p className="text-[11px] font-semibold text-[#94a3b8]">Balance</p>
 						<span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
 							Available
 						</span>
@@ -126,7 +126,7 @@ export default function AddVaylaPage() {
 							className="size-10 object-contain"
 						/>
 						<p className="text-3xl font-extrabold text-[#0f172a]">
-							{withdrawable} <span className="text-base font-semibold text-[#64748b]">VAYLA</span>
+							{displayBalance} <span className="text-base font-semibold text-[#64748b]">VAYLA</span>
 						</p>
 					</div>
 				</div>

@@ -66,7 +66,8 @@ export type DiscoveryFeedResponse = DiscoveryHotListResponse;
 
 // ─── My Submissions ─────────────────────────────────────────────
 
-export type SubmissionStatus = "approved" | "rejected" | "pending_review" | "closed";
+/** API có thể trả `pending` (filter query) hoặc `pending_review`. */
+export type SubmissionStatus = "approved" | "rejected" | "pending_review" | "pending" | "closed";
 
 export interface MySubmissionItem {
 	genre: string;
@@ -86,9 +87,13 @@ export interface MySubmissionsResponse {
 	submissions: MySubmissionItem[];
 }
 
+export type MySubmissionsApiStatus = "pending" | "approved" | "rejected";
+
 export interface GetMySubmissionsParams {
 	limit?: number;
 	offset?: number;
+	/** Query `status` trên `/submissions/my/submissions` — bỏ qua khi xem tab All. */
+	status?: MySubmissionsApiStatus;
 }
 
 // ─── Submissions ────────────────────────────────────────────────

@@ -40,7 +40,7 @@ const TABS: { id: FilterTab; label: string }[] = [
 	{ id: "rejected", label: "Rejected" },
 ];
 
-const STATUS_CONFIG: Record<SubmissionStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 	closed: {
 		label: "CLOSED",
 		className: "bg-slate-600 text-white",
@@ -57,10 +57,28 @@ const STATUS_CONFIG: Record<SubmissionStatus, { label: string; className: string
 		label: "PENDING REVIEW",
 		className: "bg-amber-500 text-white",
 	},
+	pending: {
+		label: "PENDING REVIEW",
+		className: "bg-amber-500 text-white",
+	},
 };
 
-function ActionIcon({ status }: { status: SubmissionStatus }) {
-	if (status === "pending_review") {
+const FALLBACK_STATUS_STYLE = {
+	label: "UNKNOWN",
+	className: "bg-slate-500 text-white",
+};
+
+function getStatusConfig(status: string) {
+	return (
+		STATUS_CONFIG[status] ?? {
+			...FALLBACK_STATUS_STYLE,
+			label: status.replace(/_/g, " ").toUpperCase() || FALLBACK_STATUS_STYLE.label,
+		}
+	);
+}
+
+function ActionIcon({ status }: { status: SubmissionStatus | string }) {
+	if (status === "pending_review" || status === "pending") {
 		return (
 			<div className="flex size-8 items-center justify-center rounded-full border border-[#e2e8f0]">
 				<Edit2 className="size-3.5 text-[#64748b]" />
@@ -104,7 +122,7 @@ function ActionIcon({ status }: { status: SubmissionStatus }) {
 
 function SubmissionCard({ item }: { item: MySubmissionItem }) {
 	const thumb = youtubeThumb(item.youtubeUrl);
-	const statusCfg = STATUS_CONFIG[item.status];
+	const statusCfg = getStatusConfig(item.status);
 
 	return (
 		<div className="flex items-center gap-3 border-b border-[#f1f5f9] py-4">
@@ -163,13 +181,18 @@ export default function MySubmissionsPage() {
 	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<FilterTab>("all");
 
-	const { isLoading, data: submissions } = useGetMySubmissions();
+	const listParams = useMemo(() => {
+		const base = { limit: 20, offset: 0 as const };
+		if (activeTab === "all") return base;
+		const status =
+			activeTab === "pending_review"
+				? ("pending" as const)
+				: (activeTab as "approved" | "rejected");
+		return { ...base, status };
+	}, [activeTab]);
 
-	const filtered = useMemo(() => {
-		if (!submissions) return [];
-		if (activeTab === "all") return submissions;
-		return submissions.filter(s => s.status === activeTab);
-	}, [submissions, activeTab]);
+	const { isLoading, data: submissions } = useGetMySubmissions(listParams);
+	const list = submissions ?? [];
 
 	return (
 		<div className="min-h-dvh bg-white">
@@ -213,7 +236,7 @@ export default function MySubmissionsPage() {
 			<div className="px-4">
 				{isLoading ? (
 					["s1", "s2", "s3", "s4"].map(k => <SkeletonCard key={k} />)
-				) : filtered.length === 0 ? (
+				) : list.length === 0 ? (
 					<div className="flex flex-col items-center justify-center gap-3 py-20">
 						<span className="text-4xl">🎵</span>
 						<p className="text-sm font-semibold text-[#64748b]">
@@ -230,7 +253,7 @@ export default function MySubmissionsPage() {
 						</button>
 					</div>
 				) : (
-					filtered.map(item => <SubmissionCard item={item} key={item.submissionId} />)
+					list.map(item => <SubmissionCard item={item} key={item.submissionId} />)
 				)}
 			</div>
 		</div>
