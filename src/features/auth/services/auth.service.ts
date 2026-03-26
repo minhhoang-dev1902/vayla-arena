@@ -58,3 +58,32 @@ export const registerService = (payload: RegisterRequestPayload): Promise<Regist
 		url: AUTH_ENDPOINTS.REGISTER,
 		payload: payload as Record<string, unknown>,
 	});
+
+// ─── Privy Login ─────────────────────────────────────────────────────
+
+export interface PrivyLoginPayload {
+	accessToken: string;
+	identityToken?: string;
+}
+
+export interface PrivyLoginResponse {
+	accessToken: string;
+	refreshToken: string;
+	user: {
+		id: string;
+		name: string;
+		role: string;
+		email: string;
+		status: string;
+		createdAt: string;
+		vaylaBalance: string;
+		walletAddress: string;
+		emailVerified: boolean;
+	};
+}
+
+export const privyLoginService = (payload: PrivyLoginPayload): Promise<PrivyLoginResponse> =>
+	apiService.post({
+		url: AUTH_ENDPOINTS.PRIVY_LOGIN,
+		payload: payload as Record<string, unknown>,
+	});

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Music2 } from "lucide-react";
+import { Music2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -8,43 +8,39 @@ import { useMemo } from "react";
 import calendarIcon from "@/assets/icons/calendar-icon.svg";
 import moneyIcon from "@/assets/icons/money-icon.svg";
 import usersIcon from "@/assets/icons/users-icon.svg";
+import { useGetChallenges } from "@/features/discovery/hooks/use-get-challenges";
+import { DiscoveryInnerHeader } from "../../_components/DiscoveryInnerHeader";
 import { findChallengeById, MOCK_CHALLENGES } from "../../_lib/challenges";
 import { formatDiscoveryVotes, youtubeThumb } from "../../_lib/tracks";
 
 export default function ChallengeDetailPage() {
 	const { id } = useParams<{ id: string }>();
-	const challenge = useMemo(() => findChallengeById(id) ?? MOCK_CHALLENGES[0], [id]);
+	const idStr = typeof id === "string" ? id : "";
+
+	const { data: challengeList = MOCK_CHALLENGES } = useGetChallenges();
+
+	const challenge = useMemo(
+		() => findChallengeById(idStr, challengeList) ?? MOCK_CHALLENGES[0],
+		[idStr, challengeList],
+	);
 
 	return (
-		<div className="min-h-dvh bg-white px-4 pb-8">
-			{/* Header */}
-			<div className="flex items-center gap-3 py-3.5">
-				<Link
-					aria-label="Back"
-					href="/discovery"
-					className="flex size-9 items-center justify-center rounded-full border border-[#e2e8f0] text-[#0f172a]"
-				>
-					<ArrowLeft className="size-5" />
-				</Link>
-				<div className="min-w-0">
-					<h1 className="truncate text-[15px] font-bold text-[#0f172a]">{challenge.title}</h1>
-					<p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#94a3b8]">
-						{challenge.subtitle}
-					</p>
-				</div>
-			</div>
+		<div className="min-h-dvh bg-white pb-8">
+			<DiscoveryInnerHeader />
 
-			<div className="border border-[#e2e8f0] p-4 rounded-2xl">
+			<div className="mx-4 border border-[#e2e8f0] p-4 rounded-2xl">
 				{/* Cover image */}
 				<div className="relative overflow-hidden rounded-2xl">
-					<div className="relative aspect-16/10 w-full">
-						<Image
-							fill
-							alt={challenge.title}
-							className="object-cover"
-							src={challenge.coverImage}
-							sizes="(max-width: 768px) 100vw, 768px"
-						/>
+					<div className="relative aspect-16/10 w-full bg-slate-200">
+						{challenge.coverImage && (
+							<Image
+								fill
+								alt={challenge.title}
+								className="object-cover"
+								src={challenge.coverImage}
+								sizes="(max-width: 768px) 100vw, 768px"
+							/>
+						)}
 						<div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent" />
 					</div>
 					<div className="absolute top-3 left-3 right-3 flex items-center justify-between">
@@ -67,7 +63,7 @@ export default function ChallengeDetailPage() {
 			</div>
 
 			{/* Stats — 3 equal columns, short vertical dividers */}
-			<div className="mt-5 flex items-stretch rounded-2xl border border-[#dfe7ee] bg-white px-1">
+			<div className="mx-4 mt-5 flex items-stretch rounded-2xl border border-[#dfe7ee] bg-white px-1">
 				<div className="flex min-w-0 flex-1 flex-col items-center justify-center gap-2 px-1 border-r border-[#dfe7ee] py-5">
 					<div className="flex items-center justify-center size-8 rounded-full bg-[#F0F4F3]">
 						<Image width={18} height={18} alt="Reward" src={moneyIcon} />
@@ -102,7 +98,7 @@ export default function ChallengeDetailPage() {
 			</div>
 
 			{/* Featured Tracks */}
-			<div className="mt-6">
+			<div className="mt-6 px-4">
 				<h3 className="text-base font-bold text-[#0f172a]">Featured Tracks</h3>
 
 				<div className="mt-3 flex flex-col gap-3">
@@ -150,7 +146,7 @@ export default function ChallengeDetailPage() {
 			</div>
 
 			{/* Submit Track */}
-			<div className="mt-7">
+			<div className="mt-7 px-4">
 				<Link
 					href="/discovery/upload"
 					className="flex h-12 w-full items-center justify-center rounded-2xl text-sm font-extrabold text-white"

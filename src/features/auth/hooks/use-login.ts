@@ -19,14 +19,14 @@ export function useLogin(options?: UseLoginOptions) {
 
 	const mutation = useAppMutation<LoginResponse, LoginRequestPayload>({
 		mutationFn: payload => loginService(payload),
+		onError: error => {
+			options?.onError?.(error);
+		},
 		onSuccess: data => {
 			localStorage.setItem("access_token", data.accessToken);
 			localStorage.setItem("refresh_token", data.refreshToken);
 			options?.onSuccess?.(data);
 			router.replace("/");
-		},
-		onError: error => {
-			options?.onError?.(error);
 		},
 	});
 

@@ -1,20 +1,16 @@
 "use client";
 
-import useEmblaCarousel from "embla-carousel-react";
-import { Calendar, Music2, Users } from "lucide-react";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Calendar, Loader2, Music2, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { getDiscoveryHotApi } from "@/apis/discovery.api";
-import { useAppQuery } from "@/hooks/use-app-query";
-import { createQueryKey } from "@/lib/query-key";
-import { MOCK_CHALLENGES } from "./_lib/challenges";
-import {
-	type DiscoveryTrack,
-	formatDiscoveryVotes,
-	MOCK_DISCOVERY_TRACKS,
-	youtubeThumb,
-} from "./_lib/tracks";
+import { useCallback, useRef, useState } from "react";
+import { useGetChallenges } from "@/features/discovery/hooks/use-get-challenges";
+import { useInfiniteFeedTracks } from "@/features/discovery/hooks/use-infinite-feed-tracks";
+import type { DiscoveryFeedSort } from "@/features/discovery/types/discovery.types";
+import { DiscoveryHeader } from "./_components/DiscoveryHeader";
+import TracksSliders from "./_components/TracksSliders";
+import { formatDiscoveryVotes, youtubeThumb } from "./_lib/tracks";
 
 type TabId = "trending" | "new" | "ending";
 const TABS: { id: TabId; label: string }[] = [
@@ -23,141 +19,57 @@ const TABS: { id: TabId; label: string }[] = [
 	{ id: "ending", label: "Ending Soon" },
 ];
 
-/* ── Hero Slide ── */
-function HeroSlide({ track }: { track: DiscoveryTrack }) {
-	const thumb = track.thumbnail ?? youtubeThumb(track.youtubeUrl);
-
-	return (
-		<div className="relative min-w-0 shrink-0 grow-0 basis-full px-1">
-			<div
-				className="relative flex aspect-[4/5.5] w-full flex-col justify-end overflow-hidden rounded-3xl bg-slate-200 bg-cover bg-center shadow-lg py-4"
-				style={thumb ? { backgroundImage: `url(${thumb})` } : undefined}
-			>
-				{/* {!thumb && (
-					<div className="absolute inset-0 flex items-center justify-center">
-						<Music2 className="size-12 opacity-30" />
-					</div>
-				)} */}
-
-				{/* Glass info card */}
-				<div className="mx-4 mb-10 rounded-2xl border border-white/20 bg-white/15 px-5 py-6 backdrop-blur-xl">
-					<h2 className="text-[22px] leading-tight font-extrabold text-white drop-shadow-sm">
-						{track.title}
-					</h2>
-					<p className="mt-1 text-sm font-medium text-white/80">Artist: {track.artist}</p>
-					<p className="text-xs text-white/55">Challenge: {track.challenge}</p>
-
-					{/* <div className="mt-3 flex items-center gap-2.5">
-							<div className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/20">
-								<div className="h-full w-1/3 rounded-full bg-primary" />
-							</div>
-							<span className="text-[10px] tabular-nums text-white/50">00:08 / 00:20</span>
-						</div> */}
-				</div>
-
-				{/* Votes + buttons */}
-				<div className="mx-4 mb-2 flex items-end justify-between">
-					<div>
-						<p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/90">Votes</p>
-						<p className="text-2xl font-bold text-white drop-shadow-xl">
-							{track.votes.toLocaleString()}
-						</p>
-					</div>
-					<div className="flex items-center gap-2">
-						<Link
-							href="/discovery/vote"
-							className="rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-md"
-						>
-							Vote
-						</Link>
-						<Link
-							href={`/discovery/track/${encodeURIComponent(track.id)}`}
-							className="rounded-md border-1 border-white/80 px-6 py-2.5 text-sm font-semibold text-white backdrop-blur-sm"
-						>
-							View
-						</Link>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-/* ── Main ── */
 export default function DiscoveryPage() {
 	const [activeTab, setActiveTab] = useState<TabId>("trending");
-	const [heroIdx, setHeroIdx] = useState(0);
+	const parentRef = useRef<HTMLDivElement>(null);
 
-	const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, duration: 25 });
+	const { data: apiChallenges } = useGetChallenges();
 
-	const onSelect = useCallback(() => {
-		if (!emblaApi) return;
-		setHeroIdx(emblaApi.selectedScrollSnap());
-	}, [emblaApi]);
+	const feedSort: DiscoveryFeedSort =
+		activeTab === "new" ? "new" : activeTab === "ending" ? "ending_soon" : "trending";
 
-	useEffect(() => {
-		if (!emblaApi) return;
-		queueMicrotask(onSelect);
-		emblaApi.on("select", onSelect).on("reInit", onSelect);
-	}, [emblaApi, onSelect]);
+	const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
+		useInfiniteFeedTracks(feedSort);
 
-	useEffect(() => {
-		if (!emblaApi) return;
-		const timer = setInterval(() => emblaApi.scrollNext(), 5000);
-		emblaApi.on("pointerDown", () => clearInterval(timer));
-		return () => clearInterval(timer);
-	}, [emblaApi]);
+	const challengeList = apiChallenges?.length ? apiChallenges : [];
+	const allTracks = data?.pages.flatMap(page => page.tracks) ?? [];
 
-	const { data: apiTracks } = useAppQuery<DiscoveryTrack[]>({
-		queryKey: createQueryKey("/discovery/hot", { limit: 20, offset: 0 }),
-		queryFn: async () => {
-			const response = await getDiscoveryHotApi({ limit: 20, offset: 0 });
-			const tracks = Array.isArray(response) ? response : (response?.tracks ?? []);
-			if (tracks.length === 0) return MOCK_DISCOVERY_TRACKS;
-			return tracks.map((t, i) => ({
-				id: t.submissionId || String(i),
-				rank: t.rank,
-				title: t.trackTitle,
-				artist: t.artistName,
-				challenge: t.eventName || "Discovery",
-				votes: Number(t.voteCount ?? 0),
-				youtubeUrl: t.youtubeUrl,
-			}));
-		},
+	const rowVirtualizer = useVirtualizer({
+		overscan: 5,
+		estimateSize: () => 94,
+		getScrollElement: () => parentRef.current,
+		count: hasNextPage ? allTracks.length + 1 : allTracks.length,
+		measureElement:
+			typeof window !== "undefined" && !navigator.userAgent.includes("Firefox")
+				? el => el?.getBoundingClientRect().height ?? 94
+				: undefined,
 	});
 
-	const allTracks = apiTracks?.length ? apiTracks : MOCK_DISCOVERY_TRACKS;
-	const heroTracks = useMemo(() => allTracks.slice(0, 5), [allTracks]);
-	const listTracks = useMemo(() => allTracks, [allTracks]);
+	const virtualItems = rowVirtualizer.getVirtualItems();
+
+	const handleScroll = useCallback(
+		(e: React.UIEvent<HTMLDivElement>) => {
+			if (!hasNextPage || isFetchingNextPage) return;
+			const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+			if (scrollHeight - scrollTop - clientHeight < 200) {
+				fetchNextPage();
+			}
+		},
+		[fetchNextPage, hasNextPage, isFetchingNextPage],
+	);
 
 	return (
-		<div className="flex min-h-dvh flex-col bg-[#f5f7fa]">
-			{/* Hero Carousel */}
-			<section className="px-3 pt-4">
-				<div ref={emblaRef} className="overflow-hidden">
-					<div className="flex touch-pan-y" style={{ backfaceVisibility: "hidden" }}>
-						{heroTracks.map(track => (
-							<HeroSlide key={track.id} track={track} />
-						))}
-					</div>
-				</div>
+		<div className="flex min-h-dvh flex-col ">
+			<DiscoveryHeader />
 
-				{/* Dots */}
-				<div className="mt-3 flex items-center justify-center gap-1.5">
-					{heroTracks.map((t, i) => (
-						<span
-							key={t.id}
-							className={`h-2 rounded-full transition-all ${i === heroIdx ? "w-5 bg-primary" : "w-2 bg-[#cbd5e1]"}`}
-						/>
-					))}
-				</div>
-			</section>
+			{/* Hero Carousel */}
+			<TracksSliders />
 
 			{/* Submit Track */}
 			<section className="my-6 px-4">
 				<Link
 					href="/discovery/upload"
-					className="flex py-4 w-full items-center justify-center rounded-xl border-2 border-primary text-sm font-bold tracking-wider text-white bg-primary"
+					className="flex w-full items-center justify-center rounded-xl border-2 border-primary bg-primary py-4 text-sm font-bold tracking-wider text-white"
 				>
 					Submit Track
 				</Link>
@@ -165,28 +77,30 @@ export default function DiscoveryPage() {
 
 			{/* Challenges Slider */}
 			<section className="mt-5">
-				<div className="flex items-center justify-between px-4 mb-3">
+				<div className="mb-3 flex items-center justify-between px-4">
 					<h2 className="text-base font-bold text-[#0f172a]">Active Challenges</h2>
 					<span className="text-xs font-semibold text-primary">
-						{MOCK_CHALLENGES.filter(c => c.isActive).length} active
+						{challengeList.filter(c => c.isActive).length} active
 					</span>
 				</div>
 				<div className="flex gap-3 overflow-x-auto px-4 pb-2 scrollbar-none">
-					{MOCK_CHALLENGES.map(challenge => (
+					{challengeList.map(challenge => (
 						<Link
 							key={challenge.id}
 							href={`/discovery/challenge/${challenge.id}`}
 							className="flex w-[280px] shrink-0 flex-col overflow-hidden rounded-2xl border border-[#e2eeec] bg-white shadow-sm"
 						>
-							<div className="relative h-[140px] w-full">
-								<Image
-									fill
-									sizes="280px"
-									alt={challenge.title}
-									className="object-cover"
-									src={challenge.coverImage}
-								/>
-								<div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+							<div className="relative h-[140px] w-full bg-slate-200">
+								{challenge.coverImage && (
+									<Image
+										fill
+										sizes="280px"
+										alt={challenge.title}
+										className="object-cover"
+										src={challenge.coverImage}
+									/>
+								)}
+								<div className="absolute inset-0 bg-linear-to-t from-black/40 to-transparent" />
 								{challenge.isActive && (
 									<span className="absolute top-3 left-3 rounded-full bg-primary px-2.5 py-0.5 text-[9px] font-bold uppercase text-white">
 										Active
@@ -243,50 +157,103 @@ export default function DiscoveryPage() {
 				</div>
 			</section>
 
-			{/* Track List */}
-			<section className="mt-4 flex flex-col gap-2.5 px-4 pb-8">
-				{listTracks.map(track => {
-					const thumb = track.thumbnail ?? youtubeThumb(track.youtubeUrl);
-					return (
+			{/* Track List – virtualized + infinite scroll */}
+			<section className="mt-4 px-4 pb-8">
+				{isLoading ? (
+					<div className="flex h-40 items-center justify-center">
+						<Loader2 className="size-6 animate-spin text-primary" />
+					</div>
+				) : (
+					<div
+						ref={parentRef}
+						onScroll={handleScroll}
+						style={{ contain: "strict" }}
+						className="h-[480px] overflow-y-auto scrollbar-none"
+					>
 						<div
-							key={track.id}
-							className="flex items-center gap-3 rounded-2xl border border-[#e8f0f6] bg-white p-3 shadow-sm"
+							style={{
+								width: "100%",
+								position: "relative",
+								height: rowVirtualizer.getTotalSize(),
+							}}
 						>
-							<div className="relative aspect-[4.5/5] w-16 shrink-0 overflow-hidden rounded-lg">
-								{thumb ? (
-									<Image src={thumb} alt={track.title} fill className="object-cover" sizes="48px" />
-								) : (
-									<div className="flex size-full min-h-full items-center justify-center bg-slate-100">
-										<Music2 className="size-5 opacity-40" />
+							{virtualItems.map(virtualRow => {
+								const isLoaderRow = virtualRow.index >= allTracks.length;
+								const track = allTracks[virtualRow.index];
+
+								return (
+									<div
+										key={virtualRow.key}
+										data-index={virtualRow.index}
+										ref={rowVirtualizer.measureElement}
+										style={{
+											top: 0,
+											left: 0,
+											width: "100%",
+											position: "absolute",
+											paddingBottom: "10px",
+											transform: `translateY(${virtualRow.start}px)`,
+										}}
+									>
+										{isLoaderRow ? (
+											<div className="flex items-center justify-center py-4">
+												<Loader2 className="size-5 animate-spin text-primary" />
+											</div>
+										) : (
+											(() => {
+												const thumb = track.thumbnail ?? youtubeThumb(track.youtubeUrl);
+												return (
+													<div className="flex items-center gap-3 rounded-2xl border border-[#e8f0f6] bg-white p-3 shadow-sm">
+														<div className="relative aspect-[4.5/5] w-16 shrink-0 overflow-hidden rounded-lg">
+															{thumb ? (
+																<Image
+																	fill
+																	src={thumb}
+																	sizes="48px"
+																	alt={track.title}
+																	className="object-cover"
+																/>
+															) : (
+																<div className="flex size-full min-h-full items-center justify-center bg-slate-100">
+																	<Music2 className="size-5 opacity-40" />
+																</div>
+															)}
+														</div>
+														<div className="min-w-0 flex-1">
+															<p className="truncate text-sm font-bold text-[#0f172a]">
+																{track.title}
+															</p>
+															<p className="truncate text-[11px] text-[#64748b]">
+																by: {track.artist} • Challenge: {track.challenge}
+															</p>
+															<p className="mt-0.5 text-xs font-semibold text-[#94a3b8]">
+																Votes: {formatDiscoveryVotes(track.votes)}
+															</p>
+														</div>
+														<div className="flex shrink-0 items-center gap-2">
+															<Link
+																href={`/discovery/track/${encodeURIComponent(track.id)}`}
+																className="rounded-lg border border-primary px-3 py-1.5 text-xs font-bold text-primary"
+															>
+																View
+															</Link>
+															<Link
+																href={`/discovery/vote?track=${encodeURIComponent(track.id)}`}
+																className="rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-white"
+															>
+																Vote
+															</Link>
+														</div>
+													</div>
+												);
+											})()
+										)}
 									</div>
-								)}
-							</div>
-							<div className="min-w-0 flex-1">
-								<p className="truncate text-sm font-bold text-[#0f172a]">{track.title}</p>
-								<p className="truncate text-[11px] text-[#64748b]">
-									by: {track.artist} • Challenge: {track.challenge}
-								</p>
-								<p className="mt-0.5 text-xs font-semibold text-[#94a3b8]">
-									Votes: {formatDiscoveryVotes(track.votes)}
-								</p>
-							</div>
-							<div className="flex shrink-0 items-center gap-2">
-								<Link
-									href={`/discovery/track/${encodeURIComponent(track.id)}`}
-									className="rounded-lg border border-primary px-3 py-1.5 text-xs font-bold text-primary"
-								>
-									View
-								</Link>
-								<Link
-									href="/discovery/vote"
-									className="rounded-lg bg-primary px-4 py-1.5 text-xs font-bold text-white"
-								>
-									Vote
-								</Link>
-							</div>
+								);
+							})}
 						</div>
-					);
-				})}
+					</div>
+				)}
 			</section>
 		</div>
 	);

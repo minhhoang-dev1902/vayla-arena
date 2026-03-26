@@ -1,3 +1,7 @@
+import type {
+	DiscoveryChallengeApiItem,
+	DiscoveryChallengesListResponse,
+} from "@/features/discovery/types/discovery.types";
 import type { DiscoveryTrack } from "./tracks";
 
 export interface DiscoveryChallenge {
@@ -6,12 +10,83 @@ export interface DiscoveryChallenge {
 	endsIn: string;
 	period: string;
 	reward: string;
+	eventId?: string;
 	subtitle: string;
 	isActive: boolean;
 	coverImage: string;
 	description: string;
 	submissions: number;
 	featuredTracks: DiscoveryTrack[];
+}
+
+function formatVaylaPrizePool(raw: string): string {
+	const n = Number.parseFloat(raw);
+	if (Number.isNaN(n)) return `${raw.trim()} VAYLA`;
+	return `${Math.round(n).toLocaleString("en-US")} VAYLA`;
+}
+
+function formatChallengePeriod(startIso: string, endIso: string): string {
+	const s = new Date(startIso);
+	const e = new Date(endIso);
+	const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
+	return `${s.toLocaleDateString("en-US", opts)} - ${e.toLocaleDateString("en-US", opts)}`;
+}
+
+function formatCountdownTo(targetMs: number, nowMs: number): string {
+	const diff = Math.max(0, targetMs - nowMs);
+	const day = 86_400_000;
+	const hour = 3_600_000;
+	const minute = 60_000;
+	const days = Math.floor(diff / day);
+	const hours = Math.floor((diff % day) / hour);
+	const minutes = Math.floor((diff % hour) / minute);
+	if (days > 0) return `${days}d ${hours}h`;
+	if (hours > 0) return `${hours}h ${minutes}m`;
+	if (minutes > 0) return `${minutes}m`;
+	return "<1m";
+}
+
+function formatChallengeEndsIn(item: DiscoveryChallengeApiItem, now: Date): string {
+	const start = new Date(item.startDate).getTime();
+	const end = new Date(item.endDate).getTime();
+	const nowMs = now.getTime();
+	if (nowMs > end) return "Ended";
+	if (nowMs < start) return `${formatCountdownTo(start, nowMs)} until open`;
+	return formatCountdownTo(end, nowMs);
+}
+
+export function mapDiscoveryApiChallengeToDiscoveryChallenge(
+	item: DiscoveryChallengeApiItem,
+	now = new Date(),
+): DiscoveryChallenge {
+	const start = new Date(item.startDate);
+	const end = new Date(item.endDate);
+	const nowMs = now.getTime();
+	const isActive = nowMs >= start.getTime() && nowMs <= end.getTime();
+	const slugOrId = item.slug?.trim() || item.eventId;
+
+	return {
+		isActive,
+		id: slugOrId,
+		title: item.name,
+		featuredTracks: [],
+		eventId: item.eventId,
+		coverImage: item.thumbnailUrl,
+		description: item.description,
+		submissions: item.submissionCount,
+		endsIn: formatChallengeEndsIn(item, now),
+		reward: formatVaylaPrizePool(item.vaylaPrizePool),
+		subtitle: `CHALLENGE • ${item.contentType.toUpperCase()}`,
+		period: formatChallengePeriod(item.startDate, item.endDate),
+	};
+}
+
+export function mapDiscoveryChallengesListFromApi(
+	response: DiscoveryChallengesListResponse,
+	now = new Date(),
+): DiscoveryChallenge[] {
+	const rows = response.challenges ?? [];
+	return rows.map(item => mapDiscoveryApiChallengeToDiscoveryChallenge(item, now));
 }
 
 export const MOCK_CHALLENGES: DiscoveryChallenge[] = [
@@ -125,6 +200,15 @@ export const MOCK_CHALLENGES: DiscoveryChallenge[] = [
 	},
 ];
 
-export function findChallengeById(id: string): DiscoveryChallenge | undefined {
-	return MOCK_CHALLENGES.find(c => c.id === id);
+export function findChallengeById(
+	id: string,
+	list: DiscoveryChallenge[] = MOCK_CHALLENGES,
+): DiscoveryChallenge | undefined {
+	let decoded = id;
+	try {
+		decoded = decodeURIComponent(id);
+	} catch {
+		// keep raw id
+	}
+	return list.find(c => c.id === decoded || c.eventId === decoded);
 }

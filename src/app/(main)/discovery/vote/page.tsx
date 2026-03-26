@@ -1,72 +1,77 @@
 "use client";
 
-import { Minus, Music2, Plus, X } from "lucide-react";
+import { Loader2, Minus, Music2, Plus, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { type DiscoveryTrack, MOCK_DISCOVERY_TRACKS, youtubeThumb } from "../_lib/tracks";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useGetTrackDetail } from "@/features/discovery/hooks/use-get-track-detail";
+import { useVoteTrack } from "@/features/voting/hooks/use-vote-track";
+import { useGetWalletBalance } from "@/features/wallet/hooks/use-get-wallet-balance";
+import { youtubeThumb } from "../_lib/tracks";
 
 const COST_PER_VOTE = 10;
 const MAX_VOTES = 10;
-const PLATFORM_BALANCE = 50;
-const WITHDRAWABLE_BALANCE = 0;
-const STORAGE_KEY = "discovery:voteSelection";
-const PRE_SELECT_KEY = "discovery:preSelectedTrack";
 
 export default function DiscoveryVotePage() {
 	const router = useRouter();
-	const [track, setTrack] = useState<DiscoveryTrack | null>(null);
+	const searchParams = useSearchParams();
+	const trackId = searchParams.get("track") ?? "";
+
 	const [voteCount, setVoteCount] = useState(1);
+	const [error, setError] = useState("");
 
-	useEffect(() => {
-		let selected: DiscoveryTrack | null = null;
-		try {
-			const raw = sessionStorage.getItem(PRE_SELECT_KEY);
-			if (raw) {
-				sessionStorage.removeItem(PRE_SELECT_KEY);
-				const pre = JSON.parse(raw) as { id?: string; rank?: number; title?: string };
-				selected =
-					MOCK_DISCOVERY_TRACKS.find(
-						t => t.id === pre.id || t.title === pre.title || t.rank === pre.rank,
-					) ?? null;
-			}
-		} catch {
-			// ignore
-		}
-		setTrack(selected ?? MOCK_DISCOVERY_TRACKS[0]);
-	}, []);
+	const { data: track, isLoading: trackLoading } = useGetTrackDetail(trackId);
+	const { data: balance } = useGetWalletBalance();
+	const { vote, isPending: voting } = useVoteTrack({
+		onError: err => {
+			setError(err.message ?? "Vote failed. Please try again.");
+		},
+		onSuccess: () => {
+			router.push(`/discovery/track/${encodeURIComponent(trackId)}`);
+		},
+	});
 
-	if (!track) return null;
+	const platformBalance = balance ? parseFloat(balance.platformBalance) : 0;
+	const withdrawableBalance = balance ? parseFloat(balance.withdrawableBalance) : 0;
+
+	if (!trackId) {
+		return (
+			<div className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-[#f5f7fa]">
+				<p className="text-sm text-[#64748b]">No track selected.</p>
+				<Link
+					href="/discovery"
+					className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-white"
+				>
+					Back to Discovery
+				</Link>
+			</div>
+		);
+	}
+
+	if (trackLoading || !track) {
+		return (
+			<div className="flex min-h-dvh items-center justify-center bg-[#f5f7fa]">
+				<Loader2 className="size-8 animate-spin text-primary" />
+			</div>
+		);
+	}
 
 	const totalCost = voteCount * COST_PER_VOTE;
-	const canConfirm = totalCost <= PLATFORM_BALANCE;
+	const _canConfirm = totalCost <= platformBalance && !voting;
 	const thumb = track.thumbnail ?? youtubeThumb(track.youtubeUrl);
 
-	const handleConfirm = () => {
-		if (!canConfirm) return;
-		try {
-			sessionStorage.setItem(
-				STORAGE_KEY,
-				JSON.stringify({
-					track,
-					voteCount,
-					totalCost,
-					trackId: track.id,
-					submittedAt: new Date().toISOString(),
-				}),
-			);
-		} catch {
-			// ignore
-		}
-		router.push("/discovery/vote/confirm");
+	const handleConfirm = async () => {
+		// if (!canConfirm) return;
+		setError("");
+		await vote({ voteCount, submissionId: trackId });
 	};
 
 	return (
 		<div className="flex min-h-dvh flex-col bg-[#f5f7fa] px-4 py-5">
-			<div className="rounded-3xl bg-white shadow-sm overflow-hidde px-3">
+			<div className="overflow-hidden rounded-3xl bg-white px-3 shadow-sm">
 				{/* Header */}
-				<div className="flex items-center justify-between pt-5 pb-4">
+				<div className="flex items-center justify-between pb-4 pt-5">
 					<h1 className="text-[17px] font-bold text-[#0f172a]">Confirm Vote</h1>
 					<Link
 						href="/discovery"
@@ -79,12 +84,12 @@ export default function DiscoveryVotePage() {
 
 				{/* Track card */}
 				<div className="overflow-hidden rounded-2xl border border-[#e8f0f6]">
-					<div className="flex items-center gap-3 px-3 py-3  bg-foreground">
+					<div className="flex items-center gap-3 bg-foreground px-3 py-3">
 						<div className="relative size-20 shrink-0 overflow-hidden rounded-xl">
 							{thumb ? (
-								<Image fill sizes="" src={thumb} alt={track.title} className="object-cover" />
+								<Image fill src={thumb} sizes="80px" alt={track.title} className="object-cover" />
 							) : (
-								<div className="flex size-full items-center justify-center">
+								<div className="flex size-full items-center justify-center bg-slate-100">
 									<Music2 className="size-6 text-slate-300" />
 								</div>
 							)}
@@ -92,9 +97,7 @@ export default function DiscoveryVotePage() {
 						<div className="min-w-0 flex-1">
 							<p className="truncate text-[15px] font-bold text-[#0f172a]">{track.title}</p>
 							<p className="text-sm font-medium text-primary">{track.artist}</p>
-
-							{/* Total votes band */}
-							<div className="flex items-center justify-between bg-primary/10 px-4 py-2 rounded-lg mt-2">
+							<div className="mt-2 flex items-center justify-between rounded-lg bg-primary/10 px-4 py-2">
 								<span className="text-[11px] font-bold text-[#0f172a]">Total Votes</span>
 								<span className="text-[13px] font-extrabold text-primary">
 									{track.votes.toLocaleString()}
@@ -105,7 +108,7 @@ export default function DiscoveryVotePage() {
 				</div>
 
 				{/* Cost per vote */}
-				<div className="flex items-center justify-between  border-[#f1f5f9] px-5 my-2">
+				<div className="my-2 flex items-center justify-between border-[#f1f5f9] px-5">
 					<span className="text-sm text-[#64748b]">Cost per vote</span>
 					<span className="text-sm font-bold text-[#0f172a]">{COST_PER_VOTE} VAYLA</span>
 				</div>
@@ -122,16 +125,18 @@ export default function DiscoveryVotePage() {
 						<div className="flex items-center gap-2">
 							<button
 								type="button"
+								disabled={voting}
 								onClick={() => setVoteCount(v => Math.max(1, v - 1))}
 								className="flex size-8 items-center justify-center rounded-full bg-[#edf1f4] transition active:scale-95"
 							>
 								<Minus className="size-4 text-[#0f4b46]" />
 							</button>
-							<div className="flex   items-center justify-center rounded-full bg-[#edf1f4] px-6 p-2">
+							<div className="flex items-center justify-center rounded-full bg-[#edf1f4] p-2 px-6">
 								<span className="text-sm font-bold leading-none text-[#0f4b46]">{voteCount}</span>
 							</div>
 							<button
 								type="button"
+								disabled={voting}
 								onClick={() => setVoteCount(v => Math.min(MAX_VOTES, v + 1))}
 								className="flex size-8 items-center justify-center rounded-full bg-[#edf1f4] transition active:scale-95"
 							>
@@ -142,7 +147,7 @@ export default function DiscoveryVotePage() {
 							<p className="text-[10px] font-bold uppercase leading-tight tracking-wider text-[#6f9f9c]">
 								Votes Selected
 							</p>
-							<p className="text-xl font-extrabold leading-none text-[#0f4b46] mt-2">{voteCount}</p>
+							<p className="mt-2 text-xl font-extrabold leading-none text-[#0f4b46]">{voteCount}</p>
 						</div>
 					</div>
 				</div>
@@ -154,14 +159,14 @@ export default function DiscoveryVotePage() {
 				</div>
 
 				{/* Balances */}
-				<div className="border-t border-[#f1f5f9] px-4 py-3 space-y-2">
+				<div className="space-y-2 border-t border-[#f1f5f9] px-4 py-3">
 					<div className="flex items-center justify-between rounded-xl bg-[#f8fafb] px-4 py-3">
 						<div>
 							<p className="text-[9px] font-bold uppercase tracking-[0.18em] text-[#94a3b8]">
 								Platform Balance
 							</p>
 							<p className="mt-0.5 text-[15px] font-extrabold text-[#0f172a]">
-								{PLATFORM_BALANCE} VAYLA
+								{platformBalance} VAYLA
 							</p>
 						</div>
 						<p className="text-[10px] text-[#94a3b8]">Available for voting</p>
@@ -172,7 +177,7 @@ export default function DiscoveryVotePage() {
 								Withdrawable Balance
 							</p>
 							<p className="mt-0.5 text-[15px] font-extrabold text-[#0f172a]">
-								{WITHDRAWABLE_BALANCE} VAYLA
+								{withdrawableBalance} VAYLA
 							</p>
 						</div>
 						<p className="max-w-[110px] text-right text-[10px] text-[#94a3b8]">
@@ -186,18 +191,23 @@ export default function DiscoveryVotePage() {
 					Max {MAX_VOTES} Votes Per Track
 				</p>
 
+				{/* Error */}
+				{error && (
+					<p className="px-4 pb-2 text-center text-xs font-semibold text-red-500">{error}</p>
+				)}
+
 				{/* Buttons */}
-				<div className="border-t border-[#f1f5f9] px-4 pb-5 pt-4 flex flex-col gap-3">
+				<div className="flex flex-col gap-3 border-t border-[#f1f5f9] px-4 pb-5 pt-4">
 					<button
 						type="button"
-						disabled={!canConfirm}
+						// disabled={!canConfirm}
 						onClick={handleConfirm}
 						style={{
 							background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 						}}
 						className="flex h-12 w-full items-center justify-center rounded-full text-sm font-extrabold text-white transition active:scale-[0.98] disabled:opacity-50"
 					>
-						Confirm Vote
+						{voting ? <Loader2 className="size-5 animate-spin" /> : "Confirm Vote"}
 					</button>
 					<Link
 						href="/discovery"

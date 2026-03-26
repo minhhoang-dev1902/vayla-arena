@@ -1,25 +1,26 @@
 "use client";
 
-import { ArrowLeft, Play, Vote } from "lucide-react";
+import { Play, Vote } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
-import { getDiscoveryHotApi } from "@/apis/discovery.api";
-import { useAppQuery } from "@/hooks/use-app-query";
-import { createQueryKey } from "@/lib/query-key";
-import {
-	type DiscoveryTrack,
-	MOCK_DISCOVERY_TRACKS,
-	youtubeEmbedUrl,
-	youtubeThumb,
-} from "../../_lib/tracks";
+import { useState } from "react";
+import { useGetTrackDetail } from "@/features/discovery/hooks/use-get-track-detail";
+import { DiscoveryInnerHeader } from "../../_components/DiscoveryInnerHeader";
+import { youtubeEmbedUrl, youtubeThumb } from "../../_lib/tracks";
 
 const VOTE_COST_VAYLA = 10;
-const ENDS_ON_LABEL = "Mar 28, 2026 · 23:59 UTC";
 
-function defaultAbout(track: DiscoveryTrack) {
-	return `“${track.title}” blends crisp synth textures with a late-night pulse—built for short-form energy and replayable hooks. ${track.artist} leans into neon-toned pads and tight drums that feel at home on city drives and discovery feeds alike.`;
+function formatEndsOn(isoDate: string): string {
+	try {
+		const d = new Date(isoDate);
+		return (
+			d.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }) +
+			` · ${d.toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", timeZone: "UTC", minute: "2-digit" })} UTC`
+		);
+	} catch {
+		return isoDate;
+	}
 }
 
 export default function DiscoveryTrackDetailPage() {
@@ -29,28 +30,7 @@ export default function DiscoveryTrackDetailPage() {
 
 	const [showEmbed, setShowEmbed] = useState(false);
 
-	const { isLoading, data: apiTracks } = useAppQuery<DiscoveryTrack[]>({
-		queryKey: createQueryKey("/discovery/hot", { limit: 20, offset: 0 }),
-		queryFn: async () => {
-			const response = await getDiscoveryHotApi({ limit: 20, offset: 0 });
-			const tracks = Array.isArray(response) ? response : (response?.tracks ?? []);
-			if (tracks.length === 0) return MOCK_DISCOVERY_TRACKS;
-			return tracks.map((t, i) => ({
-				rank: t.rank,
-				title: t.trackTitle,
-				artist: t.artistName,
-				youtubeUrl: t.youtubeUrl,
-				id: t.submissionId || String(i),
-				votes: Number(t.voteCount ?? 0),
-				challenge: t.eventName || "Discovery",
-			}));
-		},
-	});
-
-	const track = useMemo(() => {
-		const list = apiTracks?.length ? apiTracks : MOCK_DISCOVERY_TRACKS;
-		return list.find(t => t.id === id) ?? null;
-	}, [apiTracks, id]);
+	const { isLoading, data: track } = useGetTrackDetail(id);
 
 	const thumb = track ? (track.thumbnail ?? youtubeThumb(track.youtubeUrl)) : null;
 	const embedSrc = track ? youtubeEmbedUrl(track.youtubeUrl) : null;
@@ -79,17 +59,7 @@ export default function DiscoveryTrackDetailPage() {
 
 	return (
 		<div className="min-h-dvh bg-[#f5f7fa] pb-10">
-			{/* Header */}
-			<div className="sticky top-0 z-10 flex items-center gap-2 border-b border-[#e8f0f6] bg-[#f5f7fa]/95 px-4 py-3 backdrop-blur">
-				<Link
-					href="/discovery"
-					aria-label="Back"
-					className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-white"
-				>
-					<ArrowLeft className="size-5" />
-				</Link>
-				<span className="text-sm font-bold text-[#0f172a]">Track</span>
-			</div>
+			<DiscoveryInnerHeader />
 
 			<div className="px-4 pt-4">
 				{/* Track hero — white card */}
@@ -116,9 +86,16 @@ export default function DiscoveryTrackDetailPage() {
 						<p className="mt-1.5 text-sm text-[#5a7a72]">
 							{track.artist} <span className="text-[#94a3b8]">•</span> Artist
 						</p>
-						<span className="mt-3 inline-block rounded-full bg-[#e0f3ef] px-3 py-1.5 text-[11px] font-bold text-[#0d9488]">
-							Challenge : {track.challenge}
-						</span>
+						<div className="mt-3 flex flex-wrap gap-2">
+							<span className="inline-block rounded-full bg-[#e0f3ef] px-3 py-1.5 text-[11px] font-bold text-[#0d9488]">
+								Challenge : {track.challenge}
+							</span>
+							{track.genre && (
+								<span className="inline-block rounded-full bg-[#ede9fe] px-3 py-1.5 text-[11px] font-bold text-[#7c3aed]">
+									{track.genre}
+								</span>
+							)}
+						</div>
 					</div>
 				</section>
 
@@ -161,10 +138,12 @@ export default function DiscoveryTrackDetailPage() {
 				</div>
 
 				{/* About */}
-				<section className="mt-8">
-					<h2 className="text-base font-extrabold text-[#0f172a]">About this Track</h2>
-					<p className="mt-2 text-sm leading-relaxed text-[#64748b]">{defaultAbout(track)}</p>
-				</section>
+				{track.description && (
+					<section className="mt-8">
+						<h2 className="text-base font-extrabold text-[#0f172a]">About this Track</h2>
+						<p className="mt-2 text-sm leading-relaxed text-[#64748b]">{track.description}</p>
+					</section>
+				)}
 
 				{/* Vote card */}
 				<section className="mt-8 rounded-2xl border border-[#e8f0f6] bg-white p-4 shadow-sm">
@@ -181,11 +160,13 @@ export default function DiscoveryTrackDetailPage() {
 							<p className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8]">
 								Ends on
 							</p>
-							<p className="mt-0.5 text-xs font-semibold text-[#475569]">{ENDS_ON_LABEL}</p>
+							<p className="mt-0.5 text-xs font-semibold text-[#475569]">
+								{formatEndsOn(track.eventEndDate)}
+							</p>
 						</div>
 					</div>
 					<Link
-						href="/discovery/vote"
+						href={`/discovery/vote?track=${encodeURIComponent(track.id)}`}
 						className="mt-5 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-white shadow-sm"
 					>
 						<Vote className="size-4" />
@@ -202,7 +183,7 @@ export default function DiscoveryTrackDetailPage() {
 						</p>
 						<p className="mt-2 flex items-baseline gap-1">
 							<span className="text-[32px] font-extrabold leading-none text-[#0f172a]">50</span>
-							<span className="text-xs  text-[black]">Vayla</span>
+							<span className="text-xs text-black">Vayla</span>
 						</p>
 						<button
 							type="button"
@@ -217,7 +198,7 @@ export default function DiscoveryTrackDetailPage() {
 						</p>
 						<p className="mt-2 flex items-end gap-1">
 							<span className="text-[32px] font-extrabold leading-none text-[#0f172a]">0</span>
-							<span className="text-xs  text-[black]">Vayla</span>
+							<span className="text-xs text-black">Vayla</span>
 						</p>
 						<button
 							type="button"

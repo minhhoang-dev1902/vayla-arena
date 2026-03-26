@@ -1,25 +1,21 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
 import { LogIn, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { Button } from "@/share/components/ui/button";
 
 export default function WelcomePage() {
 	const router = useRouter();
-	const { ready, authenticated } = usePrivy();
-	const [hasLegacyToken] = useState(() => {
-		if (typeof window === "undefined") return false;
-		return Boolean(localStorage.getItem("access_token"));
-	});
+	const { ready, isAuthenticated } = useAuth();
 
 	useEffect(() => {
-		if (ready && (authenticated || hasLegacyToken)) {
+		if (ready && isAuthenticated) {
 			router.replace("/");
 		}
-	}, [ready, authenticated, hasLegacyToken, router]);
+	}, [ready, isAuthenticated, router]);
 
 	return (
 		<div className="relative flex min-h-screen flex-col overflow-hidden bg-[#020816] px-6 pb-8 pt-12 text-white">

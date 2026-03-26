@@ -1,4 +1,6 @@
 import { Menu } from "lucide-react";
+import Image from "next/image";
+import logoWithText from "@/assets/images/logo-with-text.png";
 import {
 	Sheet,
 	SheetContent,
@@ -13,15 +15,12 @@ function Header() {
 	return (
 		<header
 			style={{ height: HEADER_HEIGHT_PX, maxWidth: LAYOUT_MAX_WIDTH_PX }}
-			className="fixed top-0 left-1/2 z-40 flex w-full -translate-x-1/2 items-center justify-between border-b border-border bg-card/95 px-4 backdrop-blur supports-backdrop-filter:bg-card/80"
+			className="fixed top-0 left-1/2 z-40 flex w-full -translate-x-1/2 items-center justify-between border-b border-white/10 bg-[black] px-4 py-1"
 		>
-			<p className="text-lg font-bold text-card-foreground">VAYLA Arena</p>
+			<Image alt="Vayla" width={140} src={logoWithText} className="object-contain" />
 			<Sheet>
-				<SheetTrigger
-					className="p-2 cursor-pointer text-card-foreground"
-					// suppressHydrationWarning
-				>
-					<Menu className="size-4" />
+				<SheetTrigger className="p-2 cursor-pointer text-card-foreground">
+					<Menu className="size-5 text-white" />
 				</SheetTrigger>
 				<SheetContent>
 					<SheetHeader>

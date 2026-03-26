@@ -3,14 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import discoveryIcon from "@/assets/icons/discovery-icon.svg";
+import fundingIcon from "@/assets/icons/funding-icon.svg";
+import homeIcon from "@/assets/icons/home-icon.svg";
+import meIcon from "@/assets/icons/me-icon.svg";
+import voteIcon from "@/assets/icons/vote-icon.svg";
 import { BOTTOM_NAV_HEIGHT_PX, LAYOUT_MAX_WIDTH_PX } from "@/share/constants/layout";
 import { cn } from "@/share/utils/tailwind-merge";
 
 const NAV_ITEMS = [
-	{ href: "/", label: "Home", icon: "/icons/home.svg" },
-	{ href: "/discovery", label: "Discovery", icon: "/icons/discovery.svg" },
-	{ href: "/reward", label: "Reward", icon: "/icons/reward.svg" },
-	{ href: "/vote", label: "Vote", icon: "/icons/vote.svg" },
+	{ href: "/", label: "Home", icon: homeIcon },
+	{ href: "/funding", label: "Funding", icon: fundingIcon },
+	{ href: "/vote", label: "Vote", icon: voteIcon },
+	{ href: "/discovery", label: "Discovery", icon: discoveryIcon },
+	{ href: "/me", label: "Me", icon: meIcon },
 ];
 
 function isActivePath(pathname: string, href: string) {
