@@ -5,14 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "@/features/auth/hooks/use-auth";
 
-// TODO: remove — temporary hardcoded token for development
-if (typeof window !== "undefined") {
-	localStorage.setItem(
-		"access_token",
-		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkMjE2OTAwLTZlMmItNDgyMi1hYmM1LWRiZWE4NjU2MGMzNiIsImVtYWlsIjoiYWRtaW5AdmF5bGEuaW8iLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3NzQ0OTkzMzUsImV4cCI6MTc3NDUwMDIzNX0.T_Vzu-v1VER62zFRFDCStzWQP7VY4Y_D_gm8sqcRF9k",
-	);
-}
-
 const PUBLIC_ROUTES = ["/welcome", "/login", "/sign-up", "/connect-wallet"];
 
 function isPublicRoute(pathname: string): boolean {
@@ -30,7 +22,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 		if (!ready || isPublic) return;
 
 		if (!isAuthenticated) {
-			router.replace("/welcome");
+			router.replace("/connect-wallet");
 		}
 	}, [ready, isPublic, isAuthenticated, router]);
 

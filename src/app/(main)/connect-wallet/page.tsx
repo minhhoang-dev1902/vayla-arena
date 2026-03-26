@@ -41,9 +41,29 @@ export default function ConnectWalletPage() {
 	const { ready, isAuthenticated } = useAuth();
 
 	useEffect(() => {
-		if (ready && isAuthenticated) {
+		if (!ready || typeof window === "undefined") return;
+
+		/* Chỉ rời trang khi Privy đã xác nhận session; storage token không đủ một mình (tránh vòng với AuthGuard). */
+		if (!isAuthenticated) return;
+
+		const goHomeIfReady = () => {
+			if (!localStorage.getItem("access_token")) return false;
 			router.replace("/");
-		}
+			return true;
+		};
+
+		if (goHomeIfReady()) return;
+
+		/* PrivyTokenSync ghi access_token bất đồng bộ — poll ngắn. */
+		const interval = window.setInterval(() => {
+			if (goHomeIfReady()) window.clearInterval(interval);
+		}, 400);
+		const stop = window.setTimeout(() => window.clearInterval(interval), 60_000);
+
+		return () => {
+			window.clearInterval(interval);
+			window.clearTimeout(stop);
+		};
 	}, [ready, isAuthenticated, router]);
 
 	if (!ready) {

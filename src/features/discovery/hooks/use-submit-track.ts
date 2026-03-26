@@ -23,6 +23,7 @@ export function useSubmitTrack(options?: UseSubmitTrackOptions) {
 		onSuccess: data => {
 			queryClient.invalidateQueries({ queryKey: [DISCOVERY_ENDPOINTS.FEED] });
 			queryClient.invalidateQueries({ queryKey: [DISCOVERY_ENDPOINTS.HOT] });
+			queryClient.invalidateQueries({ queryKey: [DISCOVERY_ENDPOINTS.MY_SUBMISSIONS] });
 			options?.onSuccess?.(data);
 		},
 	});

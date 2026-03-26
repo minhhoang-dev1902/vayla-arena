@@ -1,10 +1,10 @@
 "use client";
 
-import { Menu, PlusCircle, Send, Wallet } from "lucide-react";
-import Image from "next/image";
+import { Menu, PlusCircle, Send, Wallet, X } from "lucide-react";
 import Link from "next/link";
-import logoWithText from "@/assets/images/logo-with-text.png";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { useGetWalletBalance } from "@/features/wallet/hooks/use-get-wallet-balance";
+import { SidebarWalletPicker } from "@/share/components/layout/main-layout/SidebarWalletPicker";
 import {
 	Sheet,
 	SheetClose,
@@ -36,11 +36,11 @@ const MENU_ITEMS = [
 ];
 
 interface AppSidebarProps {
-	/** Colour of the hamburger icon */
 	triggerClassName?: string;
 }
 
 export function AppSidebar({ triggerClassName }: AppSidebarProps) {
+	const { walletAddress, linkedWallets, setActiveWalletAddress } = useAuth();
 	const { data: balance } = useGetWalletBalance();
 
 	const withdrawable = balance?.withdrawableBalance
@@ -58,56 +58,61 @@ export function AppSidebar({ triggerClassName }: AppSidebarProps) {
 				<Menu className="size-5" />
 			</SheetTrigger>
 
-			<SheetContent side="right" showCloseButton={false} className="w-72 p-0 sm:max-w-xs">
+			<SheetContent
+				side="right"
+				showCloseButton={false}
+				className={cn(
+					"w-72 border-l border-white/10 bg-black p-0 text-white shadow-xl sm:max-w-xs",
+				)}
+			>
 				<SheetTitle className="sr-only">Navigation Menu</SheetTitle>
 
-				{/* Sidebar header */}
-				<div className="flex items-center justify-between border-b border-[#f1f5f9] px-5 py-4">
-					<Image alt="Vayla" width={110} src={logoWithText} className="object-contain" />
-					<SheetClose className="rounded-full p-1.5 text-[#64748b] hover:bg-slate-100">
-						<svg
-							role="img"
-							fill="none"
-							strokeWidth={2}
-							className="size-5"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							aria-label="Close menu"
+				<div className="flex h-full flex-col overflow-y-auto pt-3">
+					<div className="flex items-center justify-between border-b border-white/10 px-4 pb-2.5">
+						<p className="text-base font-bold tracking-tight text-white">Menu</p>
+						<SheetClose
+							type="button"
+							className="flex size-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white"
 						>
-							<path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-						</svg>
-					</SheetClose>
-				</div>
-
-				{/* Balance chip */}
-				<div className="mx-5 mt-4 rounded-2xl border border-[#e2f4f1] bg-primary/5 px-4 py-3">
-					<p className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
-						Withdrawable Balance
-					</p>
-					<p className="mt-0.5 text-xl font-extrabold text-[#0f172a]">
-						{withdrawable} <span className="text-sm font-semibold text-primary">VAYLA</span>
-					</p>
-				</div>
-
-				{/* Nav items */}
-				<nav className="mt-4 flex flex-col px-3">
-					{MENU_ITEMS.map(item => (
-						<SheetClose asChild key={item.href}>
-							<Link
-								href={item.href}
-								className="flex items-center gap-3 rounded-xl px-3 py-3.5 transition-colors hover:bg-slate-50"
-							>
-								<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-									<item.icon className="size-4.5 text-primary" />
-								</div>
-								<div>
-									<p className="text-sm font-semibold text-[#0f172a]">{item.label}</p>
-									<p className="text-xs text-[#94a3b8]">{item.description}</p>
-								</div>
-							</Link>
+							<X className="size-5" aria-hidden />
+							<span className="sr-only">Close menu</span>
 						</SheetClose>
-					))}
-				</nav>
+					</div>
+
+					<div className="mx-4 mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+						<p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+							Withdrawable Balance
+						</p>
+						<p className="mt-1 text-xl font-extrabold text-white">
+							{withdrawable} <span className="text-sm font-semibold text-primary">VAYLA</span>
+						</p>
+					</div>
+
+					<SidebarWalletPicker
+						wallets={linkedWallets}
+						activeAddress={walletAddress}
+						onSelectAddress={setActiveWalletAddress}
+					/>
+
+					<nav className="mt-1 flex flex-col px-2 pb-6">
+						{MENU_ITEMS.map(item => (
+							<SheetClose asChild key={item.href}>
+								<Link
+									href={item.href}
+									className="flex items-center gap-3 rounded-xl px-3 py-3 transition-colors hover:bg-white/10"
+								>
+									<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
+										<item.icon className="size-[18px] text-primary" />
+									</div>
+									<div className="min-w-0 flex-1">
+										<p className="text-[15px] font-bold text-white">{item.label}</p>
+										<p className="mt-0.5 text-xs leading-snug text-white/55">{item.description}</p>
+									</div>
+								</Link>
+							</SheetClose>
+						))}
+					</nav>
+				</div>
 			</SheetContent>
 		</Sheet>
 	);

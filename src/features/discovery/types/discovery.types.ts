@@ -86,6 +86,11 @@ export interface MySubmissionsResponse {
 	submissions: MySubmissionItem[];
 }
 
+export interface GetMySubmissionsParams {
+	limit?: number;
+	offset?: number;
+}
+
 // ─── Submissions ────────────────────────────────────────────────
 
 export interface SubmitTrackPayload {

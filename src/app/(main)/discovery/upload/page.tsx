@@ -6,12 +6,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { useGetChallenges } from "@/features/discovery/hooks/use-get-challenges";
 import { useSubmitTrack } from "@/features/discovery/hooks/use-submit-track";
 import { useGetWalletBalance } from "@/features/wallet/hooks/use-get-wallet-balance";
 import { AppSidebar } from "@/share/components/layout/main-layout/AppSidebar";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/share/components/ui/select";
 
 type OverlayState = "idle" | "confirming" | "failed";
 const UPLOAD_SUBMISSION_STORAGE_KEY = "discovery:uploadSubmission";
@@ -179,6 +186,7 @@ export default function DiscoveryUploadPage() {
 
 	const {
 		watch,
+		control,
 		register,
 		handleSubmit,
 		formState: { errors },
@@ -324,18 +332,27 @@ export default function DiscoveryUploadPage() {
 						>
 							Genre
 						</label>
-						<select
-							id="genre"
-							{...register("genre")}
-							className="w-full rounded-xl border border-[black]/40 px-4 py-3 text-sm text-[#0f172a] focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/40"
-						>
-							<option value="">Select a genre</option>
-							{GENRES.map(g => (
-								<option key={g} value={g}>
-									{g}
-								</option>
-							))}
-						</select>
+						<Controller
+							name="genre"
+							control={control}
+							render={({ field }) => (
+								<Select
+									onValueChange={field.onChange}
+									value={field.value === "" ? undefined : field.value}
+								>
+									<SelectTrigger id="genre" className="w-full" aria-invalid={Boolean(errors.genre)}>
+										<SelectValue placeholder="Select a genre" />
+									</SelectTrigger>
+									<SelectContent position="popper">
+										{GENRES.map(g => (
+											<SelectItem key={g} value={g}>
+												{g}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+							)}
+						/>
 						{errors.genre && <p className="text-xs text-red-500">{errors.genre.message}</p>}
 					</div>
 

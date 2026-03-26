@@ -59,27 +59,35 @@ export const registerService = (payload: RegisterRequestPayload): Promise<Regist
 		payload: payload as Record<string, unknown>,
 	});
 
-// ─── Privy Login ─────────────────────────────────────────────────────
+// ─── Privy → Vayla session ─────────────────────────────────────────────
 
+/** `identityToken` = `identity_token`. `accessToken` = `privy_access_token` (SDK: `getAccessToken()`). */
 export interface PrivyLoginPayload {
+	identityToken: string;
 	accessToken: string;
-	identityToken?: string;
+}
+
+export interface PrivyLoginVaylaUser {
+	id: string;
+	userIdentity: string;
+	email: string;
+	displayName: string;
+	avatarUrl: string | null;
+	role: string;
+	status: string;
+	walletAddress: string;
+	walletStatus: string;
+	emailVerified: boolean;
+	vaylaBalance: string;
+	authSource: string;
+	isNewUser: boolean;
+	createdAt: string;
 }
 
 export interface PrivyLoginResponse {
+	user: PrivyLoginVaylaUser;
 	accessToken: string;
 	refreshToken: string;
-	user: {
-		id: string;
-		name: string;
-		role: string;
-		email: string;
-		status: string;
-		createdAt: string;
-		vaylaBalance: string;
-		walletAddress: string;
-		emailVerified: boolean;
-	};
 }
 
 export const privyLoginService = (payload: PrivyLoginPayload): Promise<PrivyLoginResponse> =>

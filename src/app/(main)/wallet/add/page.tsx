@@ -1,17 +1,20 @@
 "use client";
 
 import { AlertTriangle, Check, ChevronLeft, Clock, Copy, XCircle } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useGetDepositAddress } from "@/features/wallet/hooks/use-get-deposit-address";
+import walletIcon from "@/assets/icons/wallet-icon.svg";
+import vaylaLogo from "@/assets/images/vayla-logo.png";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 import { useGetWalletBalance } from "@/features/wallet/hooks/use-get-wallet-balance";
 import type { NetworkType } from "@/features/wallet/types/wallet.types";
 import { AppSidebar } from "@/share/components/layout/main-layout/AppSidebar";
 
-const NETWORKS: { id: NetworkType; label: string; sub: string }[] = [
-	{ id: "ethereum", label: "Ethereum", sub: "ERC-20" },
+const NETWORKS: { sub: string; label: string; id: NetworkType }[] = [
+	{ sub: "ERC-20", id: "ethereum", label: "Ethereum" },
 	{ id: "bsc", label: "BSC", sub: "BEP-20" },
-	{ id: "solana", label: "Solana", sub: "SOL" },
+	{ sub: "SOL", id: "solana", label: "Solana" },
 ];
 
 const WARNINGS = [
@@ -32,9 +35,38 @@ const WARNINGS = [
 	},
 ];
 
+const QR_KEYS = [
+	"a0",
+	"a1",
+	"a2",
+	"a3",
+	"a4",
+	"b0",
+	"b1",
+	"b2",
+	"b3",
+	"b4",
+	"c0",
+	"c1",
+	"c2",
+	"c3",
+	"c4",
+	"d0",
+	"d1",
+	"d2",
+	"d3",
+	"d4",
+	"e0",
+	"e1",
+	"e2",
+	"e3",
+	"e4",
+] as const;
+const QR_PATTERN = new Set([0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19, 20, 22, 24]);
+
 function truncateAddress(addr: string): string {
-	if (addr.length <= 16) return addr;
-	return `${addr.slice(0, 12)}...`;
+	if (addr.length <= 18) return addr;
+	return `${addr.slice(0, 14)}...`;
 }
 
 export default function AddVaylaPage() {
@@ -42,25 +74,25 @@ export default function AddVaylaPage() {
 	const [network, setNetwork] = useState<NetworkType>("ethereum");
 	const [copied, setCopied] = useState(0);
 
+	const { walletAddress } = useAuth();
 	const { data: balance } = useGetWalletBalance();
-	const { data: depositData, isLoading: addressLoading } = useGetDepositAddress(network);
 
 	const withdrawable = balance?.withdrawableBalance
 		? parseFloat(balance.withdrawableBalance).toLocaleString()
 		: "—";
 
-	const address = depositData?.address ?? "";
+	const address = walletAddress ?? "";
 
 	function handleCopy() {
 		if (!address) return;
-		navigator.clipboard.writeText(address).catch(_err => {
+		navigator.clipboard.writeText(address).catch(() => {
 			/* ignore clipboard errors */
 		});
 		setCopied(prev => prev + 1);
 	}
 
 	return (
-		<div className="min-h-dvh bg-white pb-8">
+		<div className="min-h-dvh bg-[#f8fafc] pb-8">
 			{/* Header */}
 			<header className="sticky top-0 z-10 flex items-center justify-between border-b border-[#f1f5f9] bg-white px-4 py-3">
 				<div className="flex items-center gap-2">
@@ -76,105 +108,99 @@ export default function AddVaylaPage() {
 				<AppSidebar />
 			</header>
 
-			<div className="space-y-5 px-4 pt-4">
+			<div className="space-y-4 px-4 pt-4">
 				{/* Balance card */}
-				<div className="flex items-center justify-between rounded-2xl border border-[#e2e8f0] bg-white px-4 py-3 shadow-sm">
-					<div>
-						<p className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
-							Withdrawable Balance
-						</p>
-						<p className="mt-1 text-2xl font-extrabold text-[#0f172a]">
+				<div className="rounded-2xl border border-[#e2e8f0] bg-white px-4 py-4 shadow-sm">
+					<div className="flex items-center justify-between">
+						<p className="text-[11px] font-semibold text-[#94a3b8]">Withdrawable Balance</p>
+						<span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+							Available
+						</span>
+					</div>
+					<div className="mt-2 flex items-center justify-between  gap-3">
+						<Image
+							width={40}
+							alt="VAYLA"
+							height={40}
+							src={vaylaLogo}
+							className="size-10 object-contain"
+						/>
+						<p className="text-3xl font-extrabold text-[#0f172a]">
 							{withdrawable} <span className="text-base font-semibold text-[#64748b]">VAYLA</span>
 						</p>
 					</div>
-					<span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
-						Available
-					</span>
 				</div>
 
-				{/* QR / Deposit visual */}
-				<div className="flex flex-col items-center gap-4 rounded-2xl bg-primary/5 px-4 py-6">
-					<div className="flex size-36 items-center justify-center rounded-2xl bg-primary">
-						<div className="flex flex-col items-center gap-2">
-							<div className="grid grid-cols-5 gap-0.5">
-								{(
-									[
-										"a0",
-										"a1",
-										"a2",
-										"a3",
-										"a4",
-										"b0",
-										"b1",
-										"b2",
-										"b3",
-										"b4",
-										"c0",
-										"c1",
-										"c2",
-										"c3",
-										"c4",
-										"d0",
-										"d1",
-										"d2",
-										"d3",
-										"d4",
-										"e0",
-										"e1",
-										"e2",
-										"e3",
-										"e4",
-									] as const
-								).map((id, i) => {
-									const pattern = [0, 2, 4, 5, 7, 9, 10, 12, 14, 15, 17, 19, 20, 22, 24];
-									return (
-										<div
-											key={id}
-											className={`size-4 rounded-[1px] ${pattern.includes(i) ? "bg-white" : "bg-primary"}`}
-										/>
-									);
-								})}
+				{/* Deposit card */}
+				<div className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-sm">
+					{/* QR visual area */}
+					<div className="flex items-center justify-center bg-primary px-4 py-8">
+						<div className="flex flex-col items-center gap-2 rounded-2xl bg-white p-4 shadow-lg">
+							<div className="grid grid-cols-5 gap-1">
+								{QR_KEYS.map((id, i) => (
+									<div
+										key={id}
+										className={`size-5 rounded-[2px] ${QR_PATTERN.has(i) ? "bg-[#0f172a]" : "bg-white"}`}
+									/>
+								))}
 							</div>
-							<p className="text-[8px] font-bold tracking-[0.3em] text-white">DEPOSIT</p>
+							<p className="mt-1 text-[9px] font-extrabold tracking-[0.35em] text-[#0f172a]">
+								DEPOSIT
+							</p>
 						</div>
 					</div>
 
-					<div className="w-full space-y-3 text-center">
-						<div className="flex items-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-3 py-2.5">
-							<div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-								<span className="text-[10px] font-extrabold text-primary">V</span>
+					{/* Deposit info */}
+					<div className="space-y-4 px-4 py-5">
+						{/* Title row */}
+						<div className="flex items-center gap-3">
+							<div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+								<Image
+									width={10}
+									alt="VAYLA"
+									height={10}
+									src={walletIcon}
+									className="size-5 object-contain"
+								/>
 							</div>
-							<p className="flex-1 truncate text-left text-sm font-mono font-semibold text-[#0f172a]">
-								{addressLoading ? "Loading..." : truncateAddress(address)}
-							</p>
+							<div>
+								<p className="text-[15px] font-bold text-[#0f172a]">Deposit Wallet</p>
+								<p className="text-xs text-[#64748b]">Use this address to deposit VAYLA</p>
+							</div>
 						</div>
 
-						<div className="flex items-center gap-2">
+						{/* Address */}
+						<p className="font-mono text-sm font-semibold text-[#0f172a]">
+							{address ? truncateAddress(address) : "Loading..."}
+						</p>
+
+						{/* Copy row */}
+						<div className="flex items-center gap-3">
 							<button
 								type="button"
-								onClick={handleCopy}
 								disabled={!address}
+								onClick={handleCopy}
+								className="flex h-10 items-center gap-2 rounded-md px-5 text-sm font-bold text-white disabled:opacity-50"
 								style={{
 									background:
 										"linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 								}}
-								className="flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold text-white disabled:opacity-50"
 							>
 								{copied > 0 ? <Check className="size-4" /> : <Copy className="size-4" />}
 								Copy Address
 							</button>
-							<span className="shrink-0 text-xs text-[#94a3b8]">Copied {copied} times</span>
+							{/* <span className="text-xs text-[#94a3b8]">Copied {copied} times</span> */}
 						</div>
-					</div>
 
-					<p className="text-center text-xs text-[#64748b]">
-						Deposited VAYLA will be added to your Platform Balance
-					</p>
+						<p className="text-xs text-[#94a3b8]">
+							Deposited VAYLA will be added to your Platform Balance
+						</p>
+					</div>
 				</div>
 
 				{/* Network selection */}
 				<div className="space-y-2">
-					<p className="text-[10px] font-bold uppercase tracking-widest text-[#94a3b8]">
+					<p className="text-[11px] font-bold uppercase tracking-widest text-[#94a3b8]">
 						Select Network
 					</p>
 					<div className="flex gap-2">
@@ -183,7 +209,7 @@ export default function AddVaylaPage() {
 								key={n.id}
 								type="button"
 								onClick={() => setNetwork(n.id)}
-								className={`flex flex-1 flex-col items-center rounded-xl border py-2.5 text-center transition-colors ${
+								className={`flex flex-1 flex-col items-center rounded-xl border py-2.5 transition-colors ${
 									network === n.id
 										? "border-primary bg-white text-primary"
 										: "border-[#e2e8f0] bg-white text-[#64748b]"
@@ -197,7 +223,7 @@ export default function AddVaylaPage() {
 				</div>
 
 				{/* Important warnings */}
-				<div className="rounded-2xl border border-[#f1f5f9] bg-[#fafafa] p-4">
+				<div className="rounded-2xl border border-[#f1f5f9] bg-white p-4">
 					<p className="mb-3 text-sm font-bold text-[#0f172a]">Important</p>
 					<div className="space-y-3">
 						{WARNINGS.map(w => (
@@ -211,22 +237,22 @@ export default function AddVaylaPage() {
 			</div>
 
 			{/* Bottom actions */}
-			<div className="mt-6 flex gap-3 px-4">
+			<div className="mt-5 flex gap-3 px-4">
 				<button
 					type="button"
 					onClick={() => router.back()}
-					className="flex h-12 flex-1 items-center justify-center rounded-full border border-[#e2e8f0] text-sm font-bold text-[#0f172a]"
+					className="flex h-12 flex-1 items-center justify-center rounded-md border border-[#e2e8f0] text-sm font-bold text-[#0f172a]"
 				>
-					I've Sent VAYLA
+					I&apos;ve Sent VAYLA
 				</button>
 				<button
 					type="button"
-					onClick={handleCopy}
 					disabled={!address}
+					onClick={handleCopy}
 					style={{
 						background: "linear-gradient(135deg, var(--primary) 0%, #0d9488 50%, #0f766e 100%)",
 					}}
-					className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full text-sm font-bold text-white disabled:opacity-50"
+					className="flex h-12 flex-1 items-center justify-center gap-2 rounded-md text-sm font-bold text-white disabled:opacity-50"
 				>
 					<Copy className="size-4" />
 					Copy Address
