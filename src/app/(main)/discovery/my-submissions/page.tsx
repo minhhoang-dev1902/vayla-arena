@@ -9,6 +9,7 @@ import type {
 	MySubmissionItem,
 	SubmissionStatus,
 } from "@/features/discovery/types/discovery.types";
+import { AppSidebar } from "@/share/components/layout/main-layout/AppSidebar";
 
 function youtubeThumb(url: string): string {
 	const match =
@@ -173,15 +174,18 @@ export default function MySubmissionsPage() {
 	return (
 		<div className="min-h-dvh bg-white">
 			{/* Header */}
-			<header className="sticky top-0 z-10 flex items-center gap-3 border-b border-[#f1f5f9] bg-white px-4 py-3">
-				<button
-					type="button"
-					onClick={() => router.back()}
-					className="flex size-8 items-center justify-center rounded-full text-[#64748b] hover:text-[#0f172a]"
-				>
-					<ChevronLeft className="size-5" />
-				</button>
-				<h1 className="text-base font-bold text-[#0f172a]">My Submissions</h1>
+			<header className="sticky top-0 z-10 flex items-center justify-between border-b border-[#f1f5f9] bg-white px-4 py-3">
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => router.back()}
+						className="flex size-8 items-center justify-center rounded-full text-[#64748b] hover:text-[#0f172a]"
+					>
+						<ChevronLeft className="size-5" />
+					</button>
+					<h1 className="text-base font-bold text-[#0f172a]">My Submissions</h1>
+				</div>
+				<AppSidebar />
 			</header>
 
 			{/* Filter tabs */}

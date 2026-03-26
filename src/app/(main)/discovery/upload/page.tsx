@@ -11,6 +11,7 @@ import { z } from "zod";
 import { useGetChallenges } from "@/features/discovery/hooks/use-get-challenges";
 import { useSubmitTrack } from "@/features/discovery/hooks/use-submit-track";
 import { useGetWalletBalance } from "@/features/wallet/hooks/use-get-wallet-balance";
+import { AppSidebar } from "@/share/components/layout/main-layout/AppSidebar";
 
 type OverlayState = "idle" | "confirming" | "failed";
 const UPLOAD_SUBMISSION_STORAGE_KEY = "discovery:uploadSubmission";
@@ -259,18 +260,21 @@ export default function DiscoveryUploadPage() {
 		<>
 			<div className="min-h-dvh bg-white">
 				{/* Header */}
-				<div className="flex items-center gap-3 border-b border-[#f1f5f9] px-4 py-3.5">
-					<Link
-						href="/discovery"
-						aria-label="Back"
-						className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-slate-100"
-					>
-						<ArrowLeft className="size-5" />
-					</Link>
-					<div>
-						<h1 className="text-[15px] font-bold text-[#0f172a]">Submit Track</h1>
-						<p className="text-[11px] text-[#94a3b8]">Submit your track to an active challenge</p>
+				<div className="flex items-center justify-between border-b border-[#f1f5f9] px-4 py-3.5">
+					<div className="flex items-center gap-3">
+						<Link
+							href="/discovery"
+							aria-label="Back"
+							className="flex size-9 items-center justify-center rounded-full text-[#0f172a] hover:bg-slate-100"
+						>
+							<ArrowLeft className="size-5" />
+						</Link>
+						<div>
+							<h1 className="text-[15px] font-bold text-[#0f172a]">Submit Track</h1>
+							<p className="text-[11px] text-[#94a3b8]">Submit your track to an active challenge</p>
+						</div>
 					</div>
+					<AppSidebar />
 				</div>
 
 				<form className="space-y-5 px-4 py-5" onSubmit={handleSubmit(onSubmit)}>
